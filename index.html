@@ -22,6 +22,7 @@
 	<script src="./src/marchingtetrahedra2.js"></script>
 	<script src="./src/marchingtetrahedra3.js"></script>
 	<script src="./src/marchingtetrahedra4.js"></script>
+	<script src="./src/dual-marching-tetrahedra-3D.js"></script>
 	<script src="./src/surfacenets.js"></script>
 
 	<script src="./src/perlinnoise.js"></script>
@@ -50,7 +51,7 @@
 		<p>Show facets: <input type="checkbox" id="showfacets" value="checked"></p>
 		<p>Show edges: <input type="checkbox" id="showedges" value="checked"></p>
 		<p>Smooth Shade: <input type="checkbox" id="smoothShade" value="checked">
-		 - Show Grid: <input type="checkbox" id="showGrid" value="checked">
+		 - Show Grid: <input type="checkbox" id="showGrid" value="0">
 		 - Sharpen Transition: <input type="checkbox" id="sharpenTransition" value="checked">
 		</p>
 		<p>Show Normal Texture: <input type="checkbox" id="showNormal" value="checked"></p>
@@ -74,7 +75,8 @@
 		var camera, cameraControl;
 		var geometry, surfacemesh, wiremesh;
 		var meshers = {
-		    'Marching Tetraheda 4 (DCL-volume)' : MarchingTetrahedra4
+		    'Dual Marching Tetrahdra (DCL-volume)' : DualMarchingTetrahedra3
+		  , 'Marching Tetraheda 4 (DCL-volume)' : MarchingTetrahedra4
 		  , 'Marching Tetraheda 3 (DCL-plane)' : MarchingTetrahedra3
 		//  , 'Marching Tetraheda 2 (DCL-cell)' : MarchingTetrahedra2
 		 // , 'Marching Cubes': MarchingCubes
@@ -293,8 +295,8 @@
 
 	}else{
 		if( !opts.showGrid ) {
-		document.getElementById("vertcount").value = geometry.vertices.length;
-		  document.getElementById("facecount").value = geometry.faces.length;
+			document.getElementById("vertcount").value = geometry.vertices.length;
+			document.getElementById("facecount").value = geometry.faces.length;
 		}
 		else {
 			document.getElementById("vertcount").value = geometryHelper.used;
@@ -355,10 +357,10 @@
 		scene.add( surfacemesh );
 		scene.add( wiremesh );
 
-	  var bb = geometry.boundingBox;
-	  wiremesh.position.x = surfacemesh.position.x = -(bb.max.x + bb.min.x) / 2.0;
-	  wiremesh.position.y = surfacemesh.position.y = -(bb.max.y + bb.min.y) / 2.0;
-	  wiremesh.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
+			var bb = geometry.boundingBox;
+			wiremesh.position.x = surfacemesh.position.x = -(bb.max.x + bb.min.x) / 2.0;
+			wiremesh.position.y = surfacemesh.position.y = -(bb.max.y + bb.min.y) / 2.0;
+			wiremesh.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
 		}
 	
 		window.doInit = ()=>{
@@ -442,12 +444,12 @@
 
 			// here you add your objects
 			// - you will most likely replace this part by your own
-			var light	= new THREE.AmbientLight( 0.8 * 0xffffff );
+			var light	= new THREE.AmbientLight( 0.7 * 0xffffff );
 			scene.add( light );
 			var light	= new THREE.PointLight( 0.8 * 0xffffff );
 			//light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
 			light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
-			light.position.multiplyScalar(40);
+			light.position.multiplyScalar(20);
 			scene.add( light );
 
 			var light2	= new THREE.PointLight( 0.8 * 0xffffff );
@@ -457,6 +459,17 @@
 			light2.position.y = -light2.position.y;
 			light2.position.x = -light2.position.x;
 			scene.add( light2 );
+
+
+	if(0){
+			var light2	= new THREE.PointLight( 0.8 * 0xffffff );
+			//light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
+			light2.position.copy( light.position );
+			light2.position.z = 5.0;
+			light2.position.y = 0;
+			light2.position.x = 0;
+			scene.add( light2 );
+	}
 /*
 			var light2	= new THREE.PointLight( 0.8 * 0xffffff );
 			//light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
@@ -547,7 +560,7 @@
 			is.onchange = updateMesh;
 			is = document.getElementById( "showGrid" );
 			is.onchange = updateMesh;
-			is.checked = true;
+			is.checked = false;
 			is = document.getElementById( "sharpenTransition" );
 			is.onchange = updateMesh;
 			is.checked = true;
@@ -555,11 +568,11 @@
 
 			is = document.getElementById( "fillOutside" );
 			is.onchange = updateTestData;
+			is.checked = true;
 			is = document.getElementById( "fillInside" );
 			is.onchange = updateTestData;
 			is = document.getElementById( "fillOpen" );
 			is.onchange = updateTestData;
-			is.checked = true;
 
 			function updateTestData() {
 				testdata = window.createTestData( document.getElementById("fillOutside").checked?-1
