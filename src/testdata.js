@@ -26,24 +26,30 @@ function createTestData() {
 		return memoize( function(fill) {
 			var res = new Array(3);
 			for(var i=0; i<3; ++i) {
-				res[i] = 2 + Math.ceil((dims[i][1] - dims[i][0]) / dims[i][2]);
+				if( fill )
+					res[i] = 4 + Math.ceil((dims[i][1] - dims[i][0]) / dims[i][2]);
+				else
+					res[i] = 2 + Math.ceil((dims[i][1] - dims[i][0]) / dims[i][2]);
 			}
 
 			var volume = new Float32Array((res[0]+(fill?2:0)) * (res[1]+(fill?2:0)) * (res[2]+(fill?2:0)))
 				, n = 0;
+				var k=0;
 			if( fill )
-			for(var k=0; k < 1; k++ )
-			for(var j=-1, y=dims[1][0]-dims[1][2]; j<=res[1]; ++j, y+=dims[1][2])
-			for(var i=-1, x=dims[0][0]-dims[0][2]; i<=res[0]; ++i, x+=dims[0][2], ++n) {
+			for( ; k < 1; k++ )
+			for(var j=0, y=dims[1][0]-dims[1][2]; j<res[1]; ++j, y+=dims[1][2])
+			for(var i=0, x=dims[0][0]-dims[0][2]; i<res[0]; ++i, x+=dims[0][2], ++n) {
 				if( fill < 0 )
 					volume[n] = 2.3 * Math.random();
 				if( fill > 0 )
 					volume[n] = -2.3 * Math.random();
 			}
-			for(var k=0, z=dims[2][0]-dims[2][2]; k<res[2]; ++k, z+=dims[2][2])
-			for(var j=-1, y=dims[1][0]-dims[1][2]; j<=res[1]; ++j, y+=dims[1][2])
-			for(var i=-1, x=dims[0][0]-dims[0][2]; i<=res[0]; ++i, x+=dims[0][2], ++n) {
-				if( j < 0 || i < 0 || j == res[1] || i == res[0]){
+			var z;
+			for( k=k, z=dims[2][0]-dims[2][2]; k<(res[2]-(fill?1:0)); ++k, z+=dims[2][2])
+			for(var j=0, y=dims[1][0]-dims[1][2]*(fill?2:1); j<res[1]; ++j, y+=dims[1][2])
+			for(var i=0, x=dims[0][0]-dims[0][2]*(fill?2:1); i<res[0]; ++i, x+=dims[0][2], ++n) {
+			
+				if( fill && (j == 0 || i == 0 || j == (res[1]-1) || i == (res[0]-1))){
 					if( fill < 0 )
 						volume[n] = 2.3 * Math.random();
 					else if( fill > 0 )
@@ -53,21 +59,61 @@ function createTestData() {
 					volume[n] = f(x,y,z);
 			}
 			if( fill )
-			for(var k=0; k < 1; k++ )
-			for(var j=-1, y=dims[1][0]-dims[1][2]; j<=res[1]; ++j, y+=dims[1][2])
-			for(var i=-1, x=dims[0][0]-dims[0][2]; i<=res[0]; ++i, x+=dims[0][2], ++n) {
+			for( k=k; k < res[2]; k++ )
+			for(var j=0, y=dims[1][0]-dims[1][2]; j<res[1]; ++j, y+=dims[1][2])
+			for(var i=0, x=dims[0][0]-dims[0][2]; i<res[0]; ++i, x+=dims[0][2], ++n) {
 				if( fill < 0 )
 					volume[n] = 2.3 * Math.random();
 				if( fill > 0 )
 					volume[n] = -2.3 * Math.random();
 			}
-			res[0] = res[0] + (fill?2:0);
-			res[1] = res[1] + (fill?2:0);
-			res[2] = res[2] + (fill?2:0);
+			res[0] = res[0];
+			res[1] = res[1];
+			res[2] = res[2];
 			return {data: volume, dims:res};
 		});
 	}
 
+	result['1/2 Offset Tetrahedron'] = makeVolume(
+		[[-1, 1, 0.125],
+		 [-1, 1, 0.125],
+		 [-1, 1, 0.125]],
+		function(x,y,z) {
+			var INV_ROOT_3 = Math.sqrt(3)/3;
+
+			var planes = [[ INV_ROOT_3,  INV_ROOT_3,  INV_ROOT_3],
+							      [-INV_ROOT_3, -INV_ROOT_3,  INV_ROOT_3],
+							      [ INV_ROOT_3, -INV_ROOT_3, -INV_ROOT_3],
+							      [-INV_ROOT_3,  INV_ROOT_3, -INV_ROOT_3]];
+			var planeOffsets = [[ 0.3125,  0.3125,  0.3125],
+							            [-0.3125, -0.3125,  0.3125],
+							            [ 0.3125, -0.3125, -0.3125],
+							            [-0.3125,  0.3125, -0.3125]];
+
+			return distanceFromConvexPlanes(planes, planeOffsets, x, y, z);
+		}
+	);
+	
+
+	result['dot'] = makeVolume(
+		[[0, 0, 0.5],
+		 [0, 0, 0.5],
+		 [0, 0, 0.5]],
+		function(x,y,z) {
+
+			if( x || y || z ) return 1.0;
+			return  - 1.0;
+		}
+	);
+
+	result['Big Sphere'] = makeVolume(
+		[[-1.0, 1.0, 0.05],
+		 [-1.0, 1.0, 0.05],
+		 [-1.0, 1.0, 0.05]],
+		function(x,y,z) {
+			return x*x + y*y + z*z - 1.0;
+		}
+	);
 	result['Sphere'] = makeVolume(
 		[[-1.0, 1.0, 0.25],
 		 [-1.0, 1.0, 0.25],
@@ -89,25 +135,6 @@ function createTestData() {
 				return -2.3 * Math.random();
 			else
 				return 2.3 * Math.random();
-		}
-	);
-
-
-	result['Torus'] = makeVolume(
-		[[-2.0, 2.0, 0.2],
-		 [-2.0, 2.0, 0.2],
-		 [-1.0, 1.0, 0.2]],
-		function(x,y,z) {
-			return Math.pow(1.0 - Math.sqrt(x*x + y*y), 2) + z*z - 0.25;
-		}
-	);
-
-	result['Big Sphere'] = makeVolume(
-		[[-1.0, 1.0, 0.05],
-		 [-1.0, 1.0, 0.05],
-		 [-1.0, 1.0, 0.05]],
-		function(x,y,z) {
-			return x*x + y*y + z*z - 1.0;
 		}
 	);
 	
@@ -301,25 +328,6 @@ function createTestData() {
 		}
 	);
 
-	result['1/2 Offset Tetrahedron'] = makeVolume(
-		[[-1, 1, 0.125],
-		 [-1, 1, 0.125],
-		 [-1, 1, 0.125]],
-		function(x,y,z) {
-			var INV_ROOT_3 = Math.sqrt(3)/3;
-
-			var planes = [[ INV_ROOT_3,  INV_ROOT_3,  INV_ROOT_3],
-							      [-INV_ROOT_3, -INV_ROOT_3,  INV_ROOT_3],
-							      [ INV_ROOT_3, -INV_ROOT_3, -INV_ROOT_3],
-							      [-INV_ROOT_3,  INV_ROOT_3, -INV_ROOT_3]];
-			var planeOffsets = [[ 0.3125,  0.3125,  0.3125],
-							            [-0.3125, -0.3125,  0.3125],
-							            [ 0.3125, -0.3125, -0.3125],
-							            [-0.3125,  0.3125, -0.3125]];
-
-			return distanceFromConvexPlanes(planes, planeOffsets, x, y, z);
-		}
-	);
 	
 	result['Empty'] = function(){ return { data: new Float32Array(32*32*32), dims:[32,32,32] } };
 	

@@ -64,6 +64,13 @@ function createTestElementData() {
 			return x*x + y*y + z*z - 1.0;
 		}
 	);
+	result['dot'] = makeVolume(null,
+		function(x,y,z) {
+			//console.log( "duh? ", x, y, z );
+			return 0;
+		}
+	);
+
 
 	result['dots'] = makeVolume(
 		[[-4.0, 4.0, 1],

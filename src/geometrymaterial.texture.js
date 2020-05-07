@@ -16,10 +16,10 @@ function GeometryMaterial() {
 	    textureMap3 : { type:"t", value:null },
             edge_only : { type: "f", value : 0 },
             //map : { type : "t", value : null },
-            specular : {value : [0.02,0.02,0.02]},
+            specular_ : {value : [0.6,0.6,0.6]},
             emissive : {value: new THREE.Color(0,0,0 )},
             diffuse : {value: new THREE.Color(0x909090 )},
-            shininess : {value: 40},
+            shininess : {value: 15},
             ambientLightColor : {value:new THREE.Color(0x404040)},
 	    cursorIconTex      : { type:"t", value:null },
 	    cursorRayNormal    : { value : new THREE.Vector3( 0, 0, 0 ) },
@@ -116,7 +116,7 @@ function GeometryMaterial() {
 
         // this sets transformedNormal, transformdTrangent// uses a normal matrix
     	#include <defaultnormal_vertex>
-
+//transformedNormal.z = -transformedNormal.z;
         vNormal = normalize( transformedNormal );
 
         // sets transformed from 'position'
@@ -142,7 +142,7 @@ function GeometryMaterial() {
 
                 ex_use_texture = in_use_texture;
                 ex_flat_color = in_flat_color;
-                ex_Modulous = in_Modulous*3.0;
+                ex_Modulous = in_Modulous;
         }
 	v_types1 = types1;
 	v_types2 = types2;
@@ -159,9 +159,10 @@ function GeometryMaterial() {
 fragmentShader:`
     uniform vec3 diffuse;
     uniform vec3 emissive;
-    uniform vec3 specular;
+    uniform vec3 specular_;
     uniform float shininess;
     uniform float opacity;
+    vec3 specular;
     varying vec3 zzNormal;
     varying vec3 zzPos;
     varying vec4 zPosition;
@@ -254,18 +255,9 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
         #include <clipping_planes_fragment>
 
     	vec4 diffuseColor = vec4( diffuse, opacity );
+	specular = specular_;
 
-    	#include <logdepthbuf_fragment>
-    	#include <map_fragment>
-    	#include <color_fragment>
-    	#include <alphamap_fragment>
-    	#include <alphatest_fragment>
-    	#include <specularmap_fragment>
-        #include <normal_fragment_begin>
-        #include <normal_fragment_maps>
-        #include <emissivemap_fragment>
-
-	vec3 modulo = ex_Modulous/30.0 + 1.3;
+	vec3 modulo = ex_Modulous/30.0;// + 1.3;
 
 #if CALCULATE_COSINE_MERGE
 	vec3 curDeltas;
@@ -303,9 +295,9 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 
         //if(2.0 > 1.0)
         {
-                   vec4 face = ex_FaceColor;
+		vec4 face = ex_FaceColor;
 		vec4 edge = ex_Color;
-                   vec4 white;
+		vec4 white;
                 if( 1.0 > 0.0 || ex_use_texture > 0.5 )
                 {
 			float fadeFrom;
@@ -313,7 +305,9 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			float fadeBy;
 			float tmp;
 
-		tmp = v_types1.y;
+		tmp = 4.0;
+
+		edge.a = 1.0;
 		if( tmp == 0.0 ) 
 			edge.rgb = vec3( 0.0, 0.7, 0.7 );
 		else if( tmp == 1.0 ) 
@@ -321,7 +315,7 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 		else if( tmp == 2.0 ) 
 			edge.rgb = vec3( 0.0, 0.0, 5.0 );
 		else if( tmp == 3.0 ) 
-			edge.rgb = vec3( 0.5, 0.0, 0.5 );
+			edge.rgb = vec3( 0.5, 0.2, 0.5 );
 		else if( tmp == 4.0 ) 
 			edge.rgb = vec3( 0.5, 0.5, 0.0 );
 		else if( tmp == 5.0 ) 
@@ -417,7 +411,7 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
                 //}
                 //else
                 {
-			vec3 gridmod = mod( ex_Modulous+0.5, 1.0 ) - 0.5;
+			vec3 gridmod = mod( ex_Modulous, 1.0 ) - 0.5;
 
                     float g;
                     float h;
@@ -428,20 +422,80 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			// depthScalar causes the grid lines to be 'thicker' in the distance...
                     depthScalar = 1.0/(zPosition.z+50.0)*50.0;
                     depthScalar = depthScalar*depthScalar*depthScalar*depthScalar;
-
 			gridmod.x = pow( abs( gridmod.x ), ((7.0*depthScalar))*ex_Pow );
 			gridmod.y = pow( abs( gridmod.y ), ((7.0*depthScalar))*ex_Pow );
 			gridmod.z = pow( abs( gridmod.z ), ((7.0*depthScalar))*ex_Pow );
+			//gridmod = sqrt(1.0-zzNormal*zzNormal) *gridmod ;
 
-                    g = min(1.0,gridmod.x+gridmod.y+gridmod.z);
-                    h = max((gridmod.x+gridmod.y+gridmod.z)-1.5,0.0)/3.0;
-                    //white = vec3(1.0,1.0,1.0) * max(edge.r,max(edge.g,edge.b));
+			if( zzNormal.x > zzNormal.y ) {
+				if( zzNormal.x > zzNormal.z ) {
+					if( gridmod.x < 0.3 &&  ((gridmod.y + gridmod.z) < 0.3) ) {
+					    g = 0.0;
+					} else {
+                                            if( zzNormal.x > 0.90 )
+			                       g = min(1.0,gridmod.y+gridmod.z);
+                                            else
+			                       g = min(1.0,gridmod.x+gridmod.y+gridmod.z);
+					}
+				}else {
+					if( gridmod.z < 0.7 && gridmod.x + gridmod.y < 0.05 ) {
+						g = 0.0;
+					} else {
+                                            if( zzNormal.z > 0.90 )
+				                    g = min(1.0,gridmod.x+gridmod.y);
+						else
+			                       		g = min(1.0,gridmod.x+gridmod.y+gridmod.z);
+					}
+				}
+			} else {
+				if( zzNormal.y > zzNormal.z ) {
+					if( gridmod.y < 0.7 && gridmod.x + gridmod.z  < 0.05  ) {
+						g = 0.0;
+					} else {
+                                            if( zzNormal.y > 0.90 )
+			                    g = min(1.0,gridmod.x+gridmod.z);
+						else
+			                       		g = min(1.0,gridmod.x+gridmod.y+gridmod.z);
+					}
+				}else {
+					if( gridmod.z < 0.7 && gridmod.x + gridmod.y  < 0.05  ) {
+						g = 0.0;
+					} else {
+                                            if( zzNormal.z > 0.90 )
+			                    	g = min(1.0,gridmod.x+gridmod.y);
+						else
+			                       		g = min(1.0,gridmod.x+gridmod.y+gridmod.z);
+					}
+				}
+			}
+			//gridmod.x = sqrt(1.0-zzNormal.x*zzNormal.x) * pow( abs( gridmod.x ), ((7.0*depthScalar))*ex_Pow );
+			//gridmod.y = sqrt(1.0-zzNormal.y*zzNormal.y) * pow( abs( gridmod.y ), ((7.0*depthScalar))*ex_Pow );
+			//gridmod.z = sqrt(1.0-zzNormal.z*zzNormal.z) * pow( abs( gridmod.z ), ((7.0*depthScalar))*ex_Pow );
 
+ //                   g = min(1.0,gridmod.x+gridmod.y+gridmod.z);
+                    h = max((gridmod.x+gridmod.y+gridmod.z)-1.0,0.0)/12.0;
+                    white = vec4( vec3(1.0,1.0,1.0) * max(edge.r,max(edge.g,edge.b)), 1.0 );
+
+
+	specular = face.rgb;
+	diffuseColor = vec4(vec3(0.0),face.a);
+	//diffuseColor = face;
+	//gl_FragColor = face;
+
+    	#include <logdepthbuf_fragment>
+    	#include <map_fragment>
+    	#include <color_fragment>
+    	#include <alphamap_fragment>
+    	#include <alphatest_fragment>
+    	#include <specularmap_fragment>
+        #include <normal_fragment_begin>
+        #include <normal_fragment_maps>
+        #include <emissivemap_fragment>
 
       	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
         vec3 totalEmissiveRadiance = emissive;
 
-	diffuseColor = face;
+  	
         // accumulation
         #include <lights_phong_fragment>
         #include <lights_fragment_begin>
@@ -463,12 +517,19 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
     	#include <dithering_fragment>
 
 		// update to include grid computation (no shine on virtual lines)
-		if( 0.0 > 0.0 )
+		if( 1.0 > 0.0 )
 
                     if( edge_only > 0.5 )
                          gl_FragColor += vec4( h* ( white.rgb - gl_FragColor.rgb )+ (g* edge.rgb), (g * edge.a) ) ;
                     else
-                         gl_FragColor += vec4( gl_FragColor.a*(1.0-g)*gl_FragColor.rgb + h* ( white.rgb - gl_FragColor.rgb ) + (g* edge.rgb), (1.0-g)*gl_FragColor.a + (g * edge.a) ) ;
+                         gl_FragColor = vec4( gl_FragColor.a*(1.0-g)*gl_FragColor.rgb + h * ( white.rgb - gl_FragColor.rgb ) + (g* edge.rgb)
+					, (1.0-g)*gl_FragColor.a + (g * edge.a) ) ;
+
+//                         gl_FragColor = vec4( gl_FragColor.a*(1.0-g)*gl_FragColor.rgb 
+						// this is the extra highlight in corners...
+						// + h* ( white.rgb - gl_FragColor.rgb ) 
+//						+ (g* edge.rgb), (1.0-g)*gl_FragColor.a + (g * edge.a) ) ;
+
                 }
             }
 
@@ -491,14 +552,16 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 		linePoint.y = linePoint.y / aspect;
 		// since the space is already aligned to x,y,z normal; just use the resulting x,y.
 		// cursorRayNormal 
-		//vec3 cursorIconRightProjector = normalize(cross( cursorIconUp, vec3(0.0,0.0,1.0) ));
+		vec3 cursorIconRightProjector = normalize(cross( cursorIconUp, vec3(0.0,0.0,1.0) ));
 		// cursorIconRightProjector, cursorRayNormal 
-		//vec3 cursorIconUpProjector = normalize(cross( cursorIconRightProjector, vec3(0.0,0.0,1.0) ));
+		vec3 cursorIconUpProjector = normalize(cross( cursorIconRightProjector, vec3(0.0,0.0,1.0) ));
 		// project point on plane relative to 'here' scale from -1 to 1(around center) to 0 to 1 (uv)
-		// //dot( cursorIconUpProjector, linePoint )
+		// //
+		//float upProjection            = dot( cursorIconUpProjector, linePoint ) /2.0 + 0.5;
 		float upProjection            = linePoint.x / 2.0 + 0.5;
 		// //dot( cursorIconRightProjector, linePoint )
 		// apply aspect correction here.
+		//float rightProjection         = dot( cursorIconRightProjector, linePoint ) /2.0 + 0.5;;
 		float rightProjection         = (linePoint.y) / 2.0 + 0.5;
 		
 		
@@ -515,6 +578,7 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			}
 		}
 	}
+
 
     }
     `
