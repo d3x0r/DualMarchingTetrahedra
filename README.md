@@ -3,6 +3,8 @@
 
 A physical model - somewhat hard because the slopes are really all 45 degrees...
 Yellow lines show mating faces - there isn't really a gap between blue and red cells.
+This is 11 simple cells connnected together.  This arrangment is fairly stable, and can
+continue alternating red-blue forever, in every direction.
 
 ![Multitexture exmaple](sm20200506_094458.jpg )
 
@@ -17,13 +19,16 @@ THe corners that are elongated should be considered compressed into the points o
 ![Multitexture exmaple](sm20200506_094554.jpg )
 
 This is a Amalgamated Cell... this is actually proper alignment of points. (see below).
-This is a point-on view.
+This is a point-on view.  All points look the same.
 
 
 ![Multitexture exmaple](sm20200506_094702.jpg )
 
 
 This is the rectangular view of the cell.  This is a square-on view of a complex cell.
+This is an octet of cells... the center points (and outside corners) are missing.... 
+This shows the alternating arrangement of cells in the lattice. The firat image above, the 4x4 grouping
+of simple cells, includes all the points and segments, but has been displaced.  
 
 ![Multitexture exmaple](sm20200506_094730.jpg )
 
