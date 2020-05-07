@@ -1,11 +1,8 @@
-## Marching Diamond Crystal Lattice
-
-### Marching Cubes - sliced with 5 tetrahedrons.
-
-### Marching Tetrahdrons
+## Dual Marching Tetrahedra - Diamond Lattic Crystal  (DMT-DLC)
 
 
-![Multitexture exmaple](Yata-Multitexture-isosurface.png)
+
+![Multitexture exmaple](sm20200506_094458.jpg )
 
 See also
 
