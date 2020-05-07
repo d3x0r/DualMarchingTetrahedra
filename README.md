@@ -1,8 +1,36 @@
 ## Dual Marching Tetrahedra - Diamond Lattic Crystal  (DMT-DLC)
 
 
+A physical model - somewhat hard because the slopes are really all 45 degrees...
+Yellow lines show mating faces - there isn't really a gap between blue and red cells.
 
 ![Multitexture exmaple](sm20200506_094458.jpg )
+
+A single cell - skew alignment...
+
+![Multitexture exmaple](sm20200506_094548.jpg )
+
+
+A single cell - recti-linear aligned... this is the top of a 'cube' cell.
+THe corners that are elongated should be considered compressed into the points of the cube...
+
+![Multitexture exmaple](sm20200506_094554.jpg )
+
+This is a Amalgamated Cell... this is actually proper alignment of points. (see below).
+This is a point-on view.
+
+
+![Multitexture exmaple](sm20200506_094702.jpg )
+
+
+This is the rectangular view of the cell.  This is a square-on view of a complex cell.
+
+![Multitexture exmaple](sm20200506_094730.jpg )
+
+This is the other edge-on view...
+
+![Multitexture exmaple](sm20200506_094749.jpg )
+
 
 See also
 
