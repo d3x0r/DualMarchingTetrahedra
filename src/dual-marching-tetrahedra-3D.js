@@ -209,6 +209,98 @@ const debug_ = false;
 			]
 	];
 
+	
+   // array of child tetrahedra for collapsing in an octree of DLC cells.
+   // [even/odd parent cell]
+   // all cells collapse with 'even' at 0,0,0  ... 0-1  become another 0.. 2-3 -> 1 ...
+   //   [tetNumberInCell]
+   //      results (right now)   [x,y,z offset (n*2)+   , (exclusion),  tets at offset to include,... (1, 2 or 4 )   ]
+   //   the sum of x+y+z determines whether the tet ID is 'odd' or 'even'.. (x+y+z)&1 === odd.
+   //
+	const childTetList = [ [
+		 [ // 0 - 7 combined
+			  [ 0,0,1,  /* not 3,*/  0,1,2,4  ] /* all tets but 3 - odd */
+						 ,  [ 0,0,0,  0  ]
+						 ,  [ 1,0,1,  0  ]
+						 ,  [ 0,1,1,  0  ]
+		],
+		   
+		[   // 1 - 7 combined
+			  [ 1,0,0, /* not 2, */  0,1,3,4  ] /* all tets but 2 - odd */
+						  , [ 0,0,0,  1  ]
+						  , [ 1,0,1,  1  ]
+						  , [ 0,1,1,  1  ]
+	   ],
+
+	   [ // 2 - 7 combined
+			   [ 0,1,0, /* not 1, */ 0,2,3,4  ] /* all tets but 1 - odd */
+			,[ 0,1,1,  2  ]
+			,[ 1,1,1,  2  ]
+			,[ 0,0,0,  2  ]
+		],
+
+		[ // 3 - 7 combined
+				 [ 1,1,1, /* not 0,*/  1,2,3,4  ] /* all tets but 0 - odd */
+			,[ 0,1,1,  3  ]
+			,[ 1,1,0,  3  ]
+			,[ 0,1,1,  3  ]
+		],
+
+		[   // 4 - 12 combined
+			  [1,0,0,   2 ]
+			  ,[0,0,1,   3 ]
+			  ,[0,1,0,   1 ]
+			  ,[1,1,1,   0 ]
+			,[ 0,0,0,   3, 4  ]
+			,[ 0,1,1,   1, 4  ]
+			,[ 1,0,1,   2, 4  ]
+			,[ 1,1,0,   0, 4  ] 
+		],
+
+		],[
+			[ // 0 - 7 combined
+				[ 0,0,0, /* not 3, */ 0,1,2,4  ] /* all tets but 3 - even */
+							,[ 1,0,0,  0  ]
+							,[ 0,1,0,  0  ]
+							,[ 0,0,1,  0  ]
+			],
+				
+			[   // 1 - 7 combined
+					[ 1,0,1, /* not 2, */ 0,1,3,4  ] /* all tets but 2 - even */
+								,[ 1,0,0,  1  ]
+								,[ 1,1,1,  1  ]
+								,[ 0,0,1,  1  ]
+			],
+
+			[ // 2 - 7 combined
+					[ 0,1,1, /* not 3,*/  0,1,2,4  ] /* all tets but 1 - even */
+				,[ 0,1,0,  2  ]
+				,[ 0,0,1,  2  ]
+				,[ 1,1,1,  2  ]
+			],
+
+			[ // 3 - 7 combined
+						[ 1,1,0,  /* not 0,*/  1,2,3,4  ] /* all tets but 0 - even */
+				,[ 0,1,0,  3  ]
+				,[ 1,0,0,  3  ]
+				,[ 1,1,1,  3  ]
+			],
+
+			[   // 4 - 12 combined
+					[1,0,0,   2,4 ]
+					,[0,0,1,   3,4 ]
+					,[0,1,0,   1,4 ]
+					,[1,1,1,   0,4 ]
+				,[ 0,0,0,   3  ]
+				,[ 0,1,1,   1  ]
+				,[ 1,0,1,   2  ]
+				,[ 1,1,0,   0  ] 
+			],
+		]
+	]
+
+
+
 // [odd][invert][dir][longest%3/*min*/]
 const tetCentroidFacet =[  
 			[ // even
@@ -1241,41 +1333,45 @@ function meshCloud(data, dims) {
 			 , elements.data[data1], elements.data[data0], t, true
 		);
 	}
+	//https://en.wikipedia.org/wiki/Skew_lines#Nearest_Points
 
-	function getFold( p1, p2, p3, p4 ) {
+	function getFold( faceNormal, p1, p2, p3, p4 ) {
 		p1 = vertices[p1];
 		p2 = vertices[p2];
 		p3 = vertices[p3];
 		p4 = vertices[p4];
 
-		const del1 = [p1.x-p2.x,p1.y-p2.y,p1.z-p2.z];
+		const del1 = [p2.x-p1.x,p2.y-p1.y,p2.z-p1.z];
 
 		const d1 = [p1.x-p3.x,p1.y-p3.y,p1.z-p3.z];
 		const d2 = [p2.x-p4.x,p2.y-p4.y,p2.z-p4.z];
-		/*
+		
 		const l1 = 1/Math.sqrt(d1[0]*d1[0]+d1[1]*d1[1]+d1[2]*d1[2]);
 		const l2 = 1/Math.sqrt( d2[0]*d2[0]+d2[1]*d2[1]+d2[2]*d2[2]);
 		const n1 = [d1[0]*l1,d1[1]*l1,d1[2]*l1];
 		const n2 = [d2[0]*l2,d2[1]*l2,d2[2]*l2];
 		const c = [0,0,0];
 		cross(c,n1,n2);
-		const dot1 = del1[0]*n1[0] + del1[1]*n1[1] + del1[2]*n1[2] ;
+		const c2 = [0,0,0];
+		cross(c2,n1,c);
+	
+		const dot1 = del1[0]*c2[0] + del1[1]*c2[1] + del1[2]*c2[2] ;
+		const dot2 = n1[0]*c2[0] + n1[1]*c2[1] + n1[2]*c2[2];
 
-		const proj1 = [d1[0]*dot1, d1[1]*dot1, dt[2]*dot1];
+		const closeP1 = [p1.x + (( dot1/dot2  )*n1[0]),p1.y + (( dot1/dot2  )*n1[1]),p1.z + (( dot1/dot2  )*n1[2])]
 
-		const dot2 = del1[0]*c[0] + del1[1]*c[1] + del1[2]*c[2];
+		const dot3 = -del1[0]*c[0] + -del1[1]*c[1] + -del1[2]*c[2] ;
+		const dot4 = n2[0]*c[0] + n2[1]*c[1] + n2[2]*c[2];
 
-		const cproj = [c[0]*dot2,c[1]*dot2,c[2]*dot2];
+		const closeP2 = [p2.x + (( dot3/dot4  )*n2[0]),p2.y + (( dot3/dot4  )*n2[1]),p2.z + (( dot3/dot4  )*n2[2])]
 
-		const rejec = [del1[0] - proj1[0] - cproj[0], del1[1] - proj1[1] - cproj[1], del1[2] - proj1[2] - cproj[2]];
-		const rl = 1/Math.sqrt(rejec[0]*rejec[0]+rejec[1]*rejec[1]+rejec[2]*rejec[2]);
-		const dotbRej = [d2[0]*rejec[0]*rl + d2[1]*rejec[1]*rl + d2[2]*rejec[2]*rl]
-		const close = [ p2.x - n2[0]*(rejec[0]*rl)/dotbRej, p2.x - n2[1]*(rejec[1]*rl)/dotbRej, p2.x - n2[2]*(rejec[2]*rl)/dotbRej]
+		const crossDel = [closeP1[0]-closeP2[0],closeP1[1]-closeP2[1],closeP1[2]-closeP2[2]];
 
+		if( ( crossDel[0] * faceNormal[0] + crossDel[1] * faceNormal[1] + crossDel[2] * faceNormal[2] ) > 0 )
+			return 1;
+		return 0;
 
-		const r = n1[0]*n1[0]+d1[1]*n1[1]+d1[2]*n1[2];
 		// compare the length, and prefer to fold on the shorter one.
-		*/
 		if( d1[0]*d1[0]+d1[1]*d1[1]+d1[2]*d1[2] < d2[0]*d2[0]+d2[1]*d2[1]+d2[2]*d2[2] ) {
 			//console.log( "YES")
 			return 1;
@@ -1647,7 +1743,7 @@ function meshCloud(data, dims) {
 									const p0 = addPoint( normals[baseOffset + (1+1*dim0)*tetCount + 0]);
 									const p3 = addPoint( normals[baseOffset + ( 1 )*tetCount + 2]);
 									
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -1667,7 +1763,7 @@ function meshCloud(data, dims) {
 							}
 						
 							if(1)
-							if( content[baseOffset+0] 
+							if( (n1=normals[baseOffset+0] )
 							   && normals[baseOffset + ( 1*dim0*dim1 )*tetCount + 0] 
 							   && normals[baseOffset + ( 1*dim0*dim1 )*tetCount + 3] 
 							   && normals[baseOffset + ( 1*dim0*dim1 )*tetCount + 4] 
@@ -1688,7 +1784,7 @@ function meshCloud(data, dims) {
 								const p2 = addPoint( normals[baseOffset + ( 1*dim0*dim1)*tetCount + 3]);
 								const p3 = addPoint( normals[baseOffset + ( 1*dim0*dim1)*tetCount + 0]);
 
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 
 									if( inv ){
 										addFace( p0, p2, p1 );
@@ -1734,7 +1830,7 @@ function meshCloud(data, dims) {
 								const p2 = addPoint( normals[baseOffset + (1*dim0)*tetCount + 0]);
 								const p3 = addPoint( normals[baseOffset + (1*dim0)*tetCount + 1]);
 
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -1773,12 +1869,12 @@ function meshCloud(data, dims) {
 										}
 								
 								}
-								const p0 = addPoint( normals[baseOffset+1]);
+								const p0 = addPoint( n0 = normals[baseOffset+1]);
 								const p1 = addPoint( normals[baseOffset+3]);
 								const p2 = addPoint( normals[baseOffset + (1 )*tetCount + 2]);
 								const p3 = addPoint( normals[baseOffset + ( 1)*tetCount + 0]);
 
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 
 									if( inv ){
 										addFace( p0, p2, p1 );
@@ -1824,7 +1920,7 @@ function meshCloud(data, dims) {
 											};
 											break;
 									}
-									if( getFold( p0, p1, p2, p3 ) )
+									if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -1858,7 +1954,7 @@ function meshCloud(data, dims) {
 								const p1 = addPoint( normals[baseOffset + (1*dim0*dim1)*tetCount + 3]);
 								const p2 = addPoint( normals[baseOffset + (1+1*dim0*dim1)*tetCount + 2]);
 								const p3 = addPoint( normals[baseOffset + ( 1 )*tetCount + 2]);
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -1912,11 +2008,11 @@ function meshCloud(data, dims) {
 										break;
 							}
 
-							const p0 = addPoint( normals[baseOffset+1]);
+							const p0 = addPoint( n0=normals[baseOffset+1]);
 							const p1 = addPoint( normals[baseOffset+2]);
 							const p2 = addPoint( normals[baseOffset + ( 1*dim0*dim1)*tetCount + 2]);
 							const p3 = addPoint( normals[baseOffset + ( 1*dim0*dim1)*tetCount + 1]);
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -1952,12 +2048,12 @@ function meshCloud(data, dims) {
 								//console.log( "SOmething:",content[baseOffset+ ( 1*dim0)*tetCount + 0] ,content[baseOffset+ ( 1*dim0*dim1)*tetCount +1] ,content[baseOffset+ ( 1*dim0*dim1)*tetCount + 2] ,content[baseOffset+ ( 1*dim0*dim1)*tetCount + 3] ,content[baseOffset+ ( 1*dim0*dim1)*tetCount + 4]  )
 								if( normDir.dir & 4 ) inv = !inv;
 	
-								const p0 = addPoint( normals[baseOffset+3]);
+								const p0 = addPoint( n0 = normals[baseOffset+3]);
 								const p1 = addPoint( normals[baseOffset + ( 1 )*tetCount + 2]);
 								const p2 = addPoint( normals[baseOffset + (1+1*dim0)*tetCount + 0]);
 								const p3 = addPoint( normals[baseOffset + (1*dim0)*tetCount+1]);
 								inv = !inv;
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -1998,11 +2094,11 @@ function meshCloud(data, dims) {
 										}
 								}
 	
-								const p0 = addPoint( normals[baseOffset+1]);
+								const p0 = addPoint( n0 = normals[baseOffset+1]);
 								const p1 = addPoint( normals[baseOffset+3]);
 								const p2 = addPoint( normals[baseOffset + ( 1 )*tetCount + 2]);
 								const p3 = addPoint( normals[baseOffset + ( 1 )*tetCount + 0]);
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -2062,7 +2158,7 @@ function meshCloud(data, dims) {
 								const p2 = addPoint( n2);
 								const p3 = addPoint( n3);
 								//console.log( "Emit:",normDir, inv )
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -2114,7 +2210,7 @@ function meshCloud(data, dims) {
 								const p1 = addPoint( n1);
 								const p2 = addPoint( n2);
 								const p3 = addPoint( n3);
-								if( getFold( p0, p1, p2, p3 ) )
+								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
 										addFace( p0, p3, p2 );
@@ -2159,11 +2255,11 @@ function meshCloud(data, dims) {
 										added++;
 										if( normDir.dir & 2 ) inv = 0; else inv = 1;
 
-										const p0 = addPoint( normals[baseOffset+1]);
+										const p0 = addPoint( n0 = normals[baseOffset+1]);
 										const p1 = addPoint( normals[baseOffset + (1*dim0*dim1)*tetCount + 1]);
 										const p2 = addPoint( n2);
 										const p3 = addPoint( normals[baseOffset + ( 1 )*tetCount + 0]);
-										if( getFold( p0, p1, p2, p3 ) )
+										if( getFold( n0.n, p0, p1, p2, p3 ) )
 											if( inv ){
 												addFace( p0, p2, p1 );
 												addFace( p0, p3, p2 );
@@ -2214,7 +2310,7 @@ function meshCloud(data, dims) {
 							const p1 = addPoint( n1);
 							const p2 = addPoint( n2);
 							const p3 = addPoint( n3);
-							if( getFold( p0, p1, p2, p3 ) )
+							if( getFold( n0.n, p0, p1, p2, p3 ) )
 							if( inv ){
 								addFace( p0, p2, p1 );
 								addFace( p0, p3, p2 );
@@ -2256,7 +2352,7 @@ function meshCloud(data, dims) {
 							const p1 = addPoint( n1);
 							const p2 = addPoint( n2);
 							const p3 = addPoint( n3);
-							if( getFold( p0, p1, p2, p3 ) )
+							if( getFold( n0.n, p0, p1, p2, p3 ) )
 							if( inv ){
 								addFace( p0, p2, p1 );
 								addFace( p0, p3, p2 );
@@ -2296,7 +2392,7 @@ function meshCloud(data, dims) {
 							const p1 = addPoint( n1);
 							const p2 = addPoint( n2);
 							const p3 = addPoint( n3);
-							if( getFold( p0, p1, p2, p3 ) )
+							if( getFold( n0.n, p0, p1, p2, p3 ) )
 							if( inv ){
 								addFace( p0, p2, p1 );
 								addFace( p0, p3, p2 );
@@ -2336,7 +2432,7 @@ function meshCloud(data, dims) {
 							const p1 = addPoint( n1);
 							const p2 = addPoint( n2);
 							const p3 = addPoint( n3);
-							if( getFold( p0, p1, p2, p3 ) )
+							if( getFold( n0.n, p0, p1, p2, p3 ) )
 							if( inv ){
 								addFace( p0, p2, p1 );
 								addFace( p0, p3, p2 );
@@ -2375,7 +2471,7 @@ function meshCloud(data, dims) {
 							const p1 = addPoint( n1);
 							const p2 = addPoint( n2);
 							const p3 = addPoint( n3);
-							if( getFold( p0, p1, p2, p3 ) )
+							if( getFold( n0.n, p0, p1, p2, p3 ) )
 							if( inv ){
 								addFace( p0, p2, p1 );
 								addFace( p0, p3, p2 );
@@ -2414,7 +2510,7 @@ function meshCloud(data, dims) {
 							const p1 = addPoint( n1);
 							const p2 = addPoint( n2);
 							const p3 = addPoint( n3);
-							if( getFold( p0, p1, p2, p3 ) )
+							if( getFold( n0.n, p0, p1, p2, p3 ) )
 								if( inv ){
 									addFace( p0, p2, p1 );
 									addFace( p0, p3, p2 );
