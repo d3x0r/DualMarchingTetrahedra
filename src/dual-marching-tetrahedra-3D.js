@@ -599,7 +599,7 @@ function TetVert( p, n, p1, p2, p3, types, deltas ) {
 		n[0] *= nLen;
 		n[1] *= nLen;
 		n[2] *= nLen;
-		if( normalVertices ) {
+		if(  0 &&  normalVertices ) {
 			normalVertices.push( new THREE.Vector3( p[0],p[1],p[2] ))
 			normalVertices.push( new THREE.Vector3( p[0] + n[0]/2,p[1] + n[1]/2,p[2] + n[2]/2 ));
 			normalColors.push( new THREE.Color( 255,0,255,255 ))
@@ -1064,7 +1064,7 @@ function meshCloud(data, dims) {
 								if( (ds=fnorm[0]*fnorm[0]+fnorm[1]*fnorm[1]+fnorm[2]*fnorm[2]) > 0.000001 ){
 									ds = 1/Math.sqrt(ds);
 									fnorm[0] *= ds;fnorm[1] *= ds;fnorm[2] *= ds;
-									if( normalVertices ) {
+									if( 0 && normalVertices ) {
 										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
 										normalVertices.push( new THREE.Vector3( v2[0],v2[1],v2[2] ))
 										normalVertices.push( new THREE.Vector3( v2[0],v2[1],v2[2] ))
@@ -1171,7 +1171,7 @@ function meshCloud(data, dims) {
 		pointstate.normalBuffer[0] *= -s;
 		pointstate.normalBuffer[1] *= -s;
 		pointstate.normalBuffer[2] *= -s;
-		if( normalVertices ) {
+		if( 0 && normalVertices ) {
 			normalVertices.push( new THREE.Vector3( pointstate.vertBuffer[0],pointstate.vertBuffer[1],pointstate.vertBuffer[2] ))
 			normalVertices.push( new THREE.Vector3( pointstate.vertBuffer[0] + pointstate.normalBuffer[0]/2,pointstate.vertBuffer[1] + pointstate.normalBuffer[1]/2,pointstate.vertBuffer[2] + pointstate.normalBuffer[2]/2 ));
 			normalColors.push( new THREE.Color( 255,255,0,255 ))
@@ -1401,31 +1401,72 @@ function meshCloud(data, dims) {
 		p3 = vertices[p3];
 		p4 = vertices[p4];
 
-		const del1 = [p2.x-p1.x,p2.y-p1.y,p2.z-p1.z];
+		const del1 = [ p2.x-p1.x, p2.y-p1.y, p2.z-p1.z ];
 
-		const d1 = [p1.x-p3.x,p1.y-p3.y,p1.z-p3.z];
-		const d2 = [p2.x-p4.x,p2.y-p4.y,p2.z-p4.z];
+		const d1 = [p1.x-p3.x, p1.y-p3.y, p1.z-p3.z ];
+		const d2 = [p2.x-p4.x, p2.y-p4.y, p2.z-p4.z ];
 		
-		const l1 = 1/Math.sqrt(d1[0]*d1[0]+d1[1]*d1[1]+d1[2]*d1[2]);
-		const l2 = 1/Math.sqrt( d2[0]*d2[0]+d2[1]*d2[1]+d2[2]*d2[2]);
+		const l1 = 1/Math.sqrt( d1[0]*d1[0] + d1[1]*d1[1] + d1[2]*d1[2]);
+		const l2 = 1/Math.sqrt( d2[0]*d2[0] + d2[1]*d2[1] + d2[2]*d2[2]);
 		const n1 = [d1[0]*l1,d1[1]*l1,d1[2]*l1];
 		const n2 = [d2[0]*l2,d2[1]*l2,d2[2]*l2];
 		const c = [0,0,0];
 		cross(c,n1,n2);
+		const c1 = [0,0,0];
+		cross(c1,n1,c);
 		const c2 = [0,0,0];
-		cross(c2,n1,c);
+		cross(c2,n2,c);
 	
 		const dot1 = del1[0]*c2[0] + del1[1]*c2[1] + del1[2]*c2[2] ;
 		const dot2 = n1[0]*c2[0] + n1[1]*c2[1] + n1[2]*c2[2];
-
+		if( !dot2 ){
+			// dot1/dot2 with dot2 === 1 is a fault... just a guess at handling this.
+			//console.log( "these are like the same point?" );
+			 return 1;
+		}	
 		const closeP1 = [p1.x + (( dot1/dot2  )*n1[0]),p1.y + (( dot1/dot2  )*n1[1]),p1.z + (( dot1/dot2  )*n1[2])]
 
-		const dot3 = -del1[0]*c[0] + -del1[1]*c[1] + -del1[2]*c[2] ;
-		const dot4 = n2[0]*c[0] + n2[1]*c[1] + n2[2]*c[2];
+		const dot3 = -del1[0]*c1[0] + -del1[1]*c1[1] + -del1[2]*c1[2] ;
+		const dot4 = n2[0]*c1[0] + n2[1]*c1[1] + n2[2]*c1[2];
 
 		const closeP2 = [p2.x + (( dot3/dot4  )*n2[0]),p2.y + (( dot3/dot4  )*n2[1]),p2.z + (( dot3/dot4  )*n2[2])]
 
 		const crossDel = [closeP1[0]-closeP2[0],closeP1[1]-closeP2[1],closeP1[2]-closeP2[2]];
+
+		if( 0 && normalVertices ) {
+			normalVertices.push( new THREE.Vector3( p1.x,p1.y,p1.z ))
+			normalVertices.push( new THREE.Vector3( p3.x, p3.y, p3.z ));
+			normalColors.push( new THREE.Color( 255,0,0,255 ))
+			normalColors.push( new THREE.Color( 255,0,0,255 ))
+
+			normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
+			normalVertices.push( new THREE.Vector3( p2.x+c2[0], p2.y+c2[1], p2.z + c2[2] ));
+			normalColors.push( new THREE.Color( 255,255,0,255 ))
+			normalColors.push( new THREE.Color( 255,255,0,255 ))
+
+			normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
+			normalVertices.push( new THREE.Vector3( p2.x-del1[0], p2.y-del1[1], p2.z - del1[2] ));
+			normalColors.push( new THREE.Color( 255,0,255,255 ))
+			normalColors.push( new THREE.Color( 255,0,255,255 ))
+
+			normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
+			normalVertices.push( new THREE.Vector3( p4.x, p4.y, p4.z ));
+			normalColors.push( new THREE.Color( 0,255,0,255 ))
+			normalColors.push( new THREE.Color( 0,255,0,255 ))
+
+			normalVertices.push( new THREE.Vector3( closeP1[0],closeP1[1],closeP1[2] ))
+			normalVertices.push( new THREE.Vector3( closeP2[0],closeP2[1],closeP2[2] ));
+			normalColors.push( new THREE.Color( 0,0,255,255 ))
+			normalColors.push( new THREE.Color( 0,0,255,255 ))
+
+
+			normalVertices.push( new THREE.Vector3( closeP1[0],closeP1[1],closeP1[2] ))
+			normalVertices.push( new THREE.Vector3( closeP1[0]+faceNormal[0],closeP1[1]+faceNormal[1],closeP1[2]+faceNormal[2] ));
+			normalColors.push( new THREE.Color( 0,255,255,255 ))
+			normalColors.push( new THREE.Color( 0,255,255,255 ))
+
+		};
+
 
 		if( ( crossDel[0] * faceNormal[0] + crossDel[1] * faceNormal[1] + crossDel[2] * faceNormal[2] ) > 0 )
 			return 1;
