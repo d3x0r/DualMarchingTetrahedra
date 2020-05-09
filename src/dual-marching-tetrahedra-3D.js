@@ -300,6 +300,48 @@ const debug_ = false;
 	]
 
 
+const usedTets = [
+	[ // even
+		[ [ 0,0,0,0,0,0]  /* unchecked! */
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		],
+	   [  [ 0,0,0,0,0,0]  /* a few missing checks */
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		, [ 0,0,0,0,0,0]
+		],
+	  ],
+	[ 
+	  [ [ 0,0,0,0,0,0]  /* unchecked! */
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0] 
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  ],
+	 [  [ 0,0,0,0,0,0]  /* a few missing checks */
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  , [ 0,0,0,0,0,0]
+	  ],
+	],
+]
 
 // [odd][invert][dir][longest%3/*min*/]
 const tetCentroidFacet =[  
@@ -466,6 +508,7 @@ function PointState(v,type1,type2,typeDelta) {
 		normalBuffer:[0,0,0],
 		vertBuffer:[v[0],v[1],v[2]],
 		visits:0,
+		valid : true,
 		type1:type1,
 		type2:type2,
 		typeDelta:typeDelta, // saved just as meta for later
@@ -493,14 +536,25 @@ function TetVert( p, n, p1, p2, p3, types, deltas ) {
 	var l = l1+l2+l3;
 	if( 0 && normalVertices ) {
 		normalVertices.push( new THREE.Vector3( p1.vertBuffer[0],p1.vertBuffer[1],p1.vertBuffer[2] ))
-		normalVertices.push( new THREE.Vector3( p1.vertBuffer[0] + l*p1.normalBuffer[0]/50,p1.vertBuffer[1] + l*p1.normalBuffer[1]/50,p1.vertBuffer[2] + l*p1.normalBuffer[2]/50 ));
+		normalVertices.push( new THREE.Vector3( p1.vertBuffer[0] + p1.normalBuffer[0],p1.vertBuffer[1] + p1.normalBuffer[1],p1.vertBuffer[2] + p1.normalBuffer[2] ));
+		normalColors.push( new THREE.Color( 0,255,0,255 ))
+		normalColors.push( new THREE.Color( 0,255,0,255 ))
 
-		normalVertices.push( new THREE.Vector3( p2.vertBuffer[0],p2.vertBuffer[1],p2.vertBuffer[2] ))
-		normalVertices.push( new THREE.Vector3( p2.vertBuffer[0] + l*p2.normalBuffer[0]/50,p2.vertBuffer[1] + l*p2.normalBuffer[1]/50,p2.vertBuffer[2] + l*p2.normalBuffer[2]/50 ));
+		let x;
+		normalVertices.push( x = new THREE.Vector3( p2.vertBuffer[0],p2.vertBuffer[1],p2.vertBuffer[2] ))
+		if( !x.length() )debugger;
+		normalVertices.push( x = new THREE.Vector3( p2.vertBuffer[0] + p2.normalBuffer[0],p2.vertBuffer[1] + p2.normalBuffer[1],p2.vertBuffer[2] + p2.normalBuffer[2] ));
+		if( !x.length() )debugger;
+		normalColors.push( new THREE.Color( 0,0,255,255 ))
+		normalColors.push( new THREE.Color( 0,0,255,255 ))
 
+		if(1){
 		normalVertices.push( new THREE.Vector3( p3.vertBuffer[0],p3.vertBuffer[1],p3.vertBuffer[2] ))
-		normalVertices.push( new THREE.Vector3( p3.vertBuffer[0] + l*p3.normalBuffer[0]/50,p3.vertBuffer[1] + l*p3.normalBuffer[1]/50,p3.vertBuffer[2] + l*p3.normalBuffer[2]/50 ));
-	};
+		normalVertices.push( new THREE.Vector3( p3.vertBuffer[0] + p3.normalBuffer[0],p3.vertBuffer[1] + p3.normalBuffer[1],p3.vertBuffer[2] + p3.normalBuffer[2] ));
+		normalColors.push( new THREE.Color( 255,0,0,255 ))
+		normalColors.push( new THREE.Color( 255,0,0,255 ))
+		}
+};
 
 	// bigger than the grey circle; which puts them all co-linear.
 	if( l > 0.1 ) {
@@ -1087,6 +1141,30 @@ function meshCloud(data, dims) {
 								}else {
 									// basically never happens given the initial triangle characterization.
 									//console.log( "1Still not happy...", fnorm, ds,vA, vB, vC );
+									continue;
+									// this is a sliver tri-face; really want to disregard this one.
+									if( normalVertices ) {
+										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
+										normalVertices.push( new THREE.Vector3( v2[0],v2[1],v2[2] ))
+										normalVertices.push( new THREE.Vector3( v2[0],v2[1],v2[2] ))
+										normalVertices.push( new THREE.Vector3( v3[0],v3[1],v3[2] ))
+										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
+										normalVertices.push( new THREE.Vector3( v3[0],v3[1],v3[2] ))
+
+										normalColors.push( new THREE.Color( 255,0,0,255 ))
+										normalColors.push( new THREE.Color( 255,0,0,255 ))
+										normalColors.push( new THREE.Color( 0,255,0,255 ))
+										normalColors.push( new THREE.Color( 0,255,0,255 ))
+										normalColors.push( new THREE.Color( 0,0,255,255))
+										normalColors.push( new THREE.Color( 0,0,255,255 ))
+
+										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
+										normalVertices.push( new THREE.Vector3( v1[0] - fnorm[0]/2,v1[1] - fnorm[1]/2,v1[2] - fnorm[2]/2 ));
+										normalColors.push( new THREE.Color( 255,255,255,255 ))
+										normalColors.push( new THREE.Color( 255,255,255,255 ))
+									};
+
+
 									// b->A  c->A
 									fnorm[0] = vB[0]-vA[0];fnorm[1] = vB[1]-vA[1];fnorm[2] = vB[2]-vA[2];
 									tmp[0] = vC[0]-vA[0];tmp[1] = vC[1]-vA[1];tmp[2] = vC[2]-vA[2];
@@ -1125,6 +1203,7 @@ function meshCloud(data, dims) {
 									if( (a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2] ) >0.00000001 && 
 									    (a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) >0.00000001 )
 										angle = 2*Math.acos( clamp((a1t[0]*a2t[0]+a1t[1]*a2t[1]+a1t[2]*a2t[2])/(Math.sqrt(a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2])*Math.sqrt(a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) ), 1.0 ));
+									if( angle < 0.0001 ) angle = 0.001
 									pointStateHolder[ai].normalBuffer[0] += fnorm[0]*angle;
 									pointStateHolder[ai].normalBuffer[1] += fnorm[1]*angle;
 									pointStateHolder[ai].normalBuffer[2] += fnorm[2]*angle;
@@ -1139,6 +1218,7 @@ function meshCloud(data, dims) {
 											angle = 2*Math.acos( clamp((a1t[0]*a2t[0]+a1t[1]*a2t[1]+a1t[2]*a2t[2])/(Math.sqrt(a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2])*Math.sqrt(a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) ), 1.0) );
 									}
 
+									if( angle < 0.0001 ) angle = 0.001
 									pointStateHolder[bi].normalBuffer[0] += fnorm[0]*angle;
 									pointStateHolder[bi].normalBuffer[1] += fnorm[1]*angle;
 									pointStateHolder[bi].normalBuffer[2] += fnorm[2]*angle;
@@ -1152,6 +1232,7 @@ function meshCloud(data, dims) {
 									if( (a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2] ) >0.00000001 && 
 										(a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) >0.00000001 )
 										angle = 2*Math.acos( clamp((a1t[0]*a2t[0]+a1t[1]*a2t[1]+a1t[2]*a2t[2])/(Math.sqrt(a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2])*Math.sqrt(a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) ), 1.0) );
+									if( angle < 0.0001 ) angle = 0.001
 									pointStateHolder[ci].normalBuffer[0] += fnorm[0]*angle;
 									pointStateHolder[ci].normalBuffer[1] += fnorm[1]*angle;
 									pointStateHolder[ci].normalBuffer[2] += fnorm[2]*angle;
@@ -1168,10 +1249,16 @@ function meshCloud(data, dims) {
 	for( var ps = 0; ps < pointStateHolder.length; ps++ ) {
 		const pointstate = pointStateHolder[ps];
 		const s = 1/Math.sqrt(pointstate.normalBuffer[0]*pointstate.normalBuffer[0]+pointstate.normalBuffer[1]*pointstate.normalBuffer[1]+pointstate.normalBuffer[2]*pointstate.normalBuffer[2] );
+		if( s === Infinity ) { 
+			pointstate.valid = false;
+			continue;
+			//debugger;
+		}
 		pointstate.normalBuffer[0] *= -s;
 		pointstate.normalBuffer[1] *= -s;
 		pointstate.normalBuffer[2] *= -s;
-		if( 0 && normalVertices ) {
+		//if( isNaN(pointstate.normalBuffer[0] )) debugger;
+		if(  0 && normalVertices ) {
 			normalVertices.push( new THREE.Vector3( pointstate.vertBuffer[0],pointstate.vertBuffer[1],pointstate.vertBuffer[2] ))
 			normalVertices.push( new THREE.Vector3( pointstate.vertBuffer[0] + pointstate.normalBuffer[0]/2,pointstate.vertBuffer[1] + pointstate.normalBuffer[1]/2,pointstate.vertBuffer[2] + pointstate.normalBuffer[2]/2 ));
 			normalColors.push( new THREE.Color( 255,255,0,255 ))
@@ -1331,6 +1418,7 @@ function meshCloud(data, dims) {
 		let bnx = baseNormal[0];
 		let bny = baseNormal[1];
 		let bnz = baseNormal[2];
+		s.dir = 0;
 		if( bnx < 0 ) { s.dir |= 1; bnx = -bnx; }
 		if( bny < 0 ) { s.dir |= 2; bny = -bny; }
 		if( bnz < 0 ) { s.dir |= 4; bnz = -bnz; }
@@ -1419,59 +1507,57 @@ function meshCloud(data, dims) {
 	
 		const dot1 = del1[0]*c2[0] + del1[1]*c2[1] + del1[2]*c2[2] ;
 		const dot2 = n1[0]*c2[0] + n1[1]*c2[1] + n1[2]*c2[2];
-		if( !dot2 ){
+		if( dot2 ){
 			// dot1/dot2 with dot2 === 1 is a fault... just a guess at handling this.
 			//console.log( "these are like the same point?" );
-			 return 1;
+			const closeP1 = [p1.x + (( dot1/dot2  )*n1[0]),p1.y + (( dot1/dot2  )*n1[1]),p1.z + (( dot1/dot2  )*n1[2])]
+		        
+			const dot3 = -del1[0]*c1[0] + -del1[1]*c1[1] + -del1[2]*c1[2] ;
+			const dot4 = n2[0]*c1[0] + n2[1]*c1[1] + n2[2]*c1[2];
+		        
+			const closeP2 = [p2.x + (( dot3/dot4  )*n2[0]),p2.y + (( dot3/dot4  )*n2[1]),p2.z + (( dot3/dot4  )*n2[2])]
+		        
+			const crossDel = [closeP1[0]-closeP2[0],closeP1[1]-closeP2[1],closeP1[2]-closeP2[2]];
+		        
+			if( 0 && normalVertices ) {
+				normalVertices.push( new THREE.Vector3( p1.x,p1.y,p1.z ))
+				normalVertices.push( new THREE.Vector3( p3.x, p3.y, p3.z ));
+				normalColors.push( new THREE.Color( 255,0,0,255 ))
+				normalColors.push( new THREE.Color( 255,0,0,255 ))
+		        
+				normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
+				normalVertices.push( new THREE.Vector3( p2.x+c2[0], p2.y+c2[1], p2.z + c2[2] ));
+				normalColors.push( new THREE.Color( 255,255,0,255 ))
+				normalColors.push( new THREE.Color( 255,255,0,255 ))
+		        
+				normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
+				normalVertices.push( new THREE.Vector3( p2.x-del1[0], p2.y-del1[1], p2.z - del1[2] ));
+				normalColors.push( new THREE.Color( 255,0,255,255 ))
+				normalColors.push( new THREE.Color( 255,0,255,255 ))
+		        
+				normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
+				normalVertices.push( new THREE.Vector3( p4.x, p4.y, p4.z ));
+				normalColors.push( new THREE.Color( 0,255,0,255 ))
+				normalColors.push( new THREE.Color( 0,255,0,255 ))
+		        
+				normalVertices.push( new THREE.Vector3( closeP1[0],closeP1[1],closeP1[2] ))
+				normalVertices.push( new THREE.Vector3( closeP2[0],closeP2[1],closeP2[2] ));
+				normalColors.push( new THREE.Color( 0,0,255,255 ))
+				normalColors.push( new THREE.Color( 0,0,255,255 ))
+		        
+		        
+				normalVertices.push( new THREE.Vector3( closeP1[0],closeP1[1],closeP1[2] ))
+				normalVertices.push( new THREE.Vector3( closeP1[0]+faceNormal[0],closeP1[1]+faceNormal[1],closeP1[2]+faceNormal[2] ));
+				normalColors.push( new THREE.Color( 0,255,255,255 ))
+				normalColors.push( new THREE.Color( 0,255,255,255 ))
+		        
+			};
+
+			if( ( crossDel[0] * faceNormal[0] + crossDel[1] * faceNormal[1] + crossDel[2] * faceNormal[2] ) > 0 )
+				return 1;
+			return 0;
+
 		}	
-		const closeP1 = [p1.x + (( dot1/dot2  )*n1[0]),p1.y + (( dot1/dot2  )*n1[1]),p1.z + (( dot1/dot2  )*n1[2])]
-
-		const dot3 = -del1[0]*c1[0] + -del1[1]*c1[1] + -del1[2]*c1[2] ;
-		const dot4 = n2[0]*c1[0] + n2[1]*c1[1] + n2[2]*c1[2];
-
-		const closeP2 = [p2.x + (( dot3/dot4  )*n2[0]),p2.y + (( dot3/dot4  )*n2[1]),p2.z + (( dot3/dot4  )*n2[2])]
-
-		const crossDel = [closeP1[0]-closeP2[0],closeP1[1]-closeP2[1],closeP1[2]-closeP2[2]];
-
-		if( 0 && normalVertices ) {
-			normalVertices.push( new THREE.Vector3( p1.x,p1.y,p1.z ))
-			normalVertices.push( new THREE.Vector3( p3.x, p3.y, p3.z ));
-			normalColors.push( new THREE.Color( 255,0,0,255 ))
-			normalColors.push( new THREE.Color( 255,0,0,255 ))
-
-			normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
-			normalVertices.push( new THREE.Vector3( p2.x+c2[0], p2.y+c2[1], p2.z + c2[2] ));
-			normalColors.push( new THREE.Color( 255,255,0,255 ))
-			normalColors.push( new THREE.Color( 255,255,0,255 ))
-
-			normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
-			normalVertices.push( new THREE.Vector3( p2.x-del1[0], p2.y-del1[1], p2.z - del1[2] ));
-			normalColors.push( new THREE.Color( 255,0,255,255 ))
-			normalColors.push( new THREE.Color( 255,0,255,255 ))
-
-			normalVertices.push( new THREE.Vector3( p2.x,p2.y,p2.z ))
-			normalVertices.push( new THREE.Vector3( p4.x, p4.y, p4.z ));
-			normalColors.push( new THREE.Color( 0,255,0,255 ))
-			normalColors.push( new THREE.Color( 0,255,0,255 ))
-
-			normalVertices.push( new THREE.Vector3( closeP1[0],closeP1[1],closeP1[2] ))
-			normalVertices.push( new THREE.Vector3( closeP2[0],closeP2[1],closeP2[2] ));
-			normalColors.push( new THREE.Color( 0,0,255,255 ))
-			normalColors.push( new THREE.Color( 0,0,255,255 ))
-
-
-			normalVertices.push( new THREE.Vector3( closeP1[0],closeP1[1],closeP1[2] ))
-			normalVertices.push( new THREE.Vector3( closeP1[0]+faceNormal[0],closeP1[1]+faceNormal[1],closeP1[2]+faceNormal[2] ));
-			normalColors.push( new THREE.Color( 0,255,255,255 ))
-			normalColors.push( new THREE.Color( 0,255,255,255 ))
-
-		};
-
-
-		if( ( crossDel[0] * faceNormal[0] + crossDel[1] * faceNormal[1] + crossDel[2] * faceNormal[2] ) > 0 )
-			return 1;
-		return 0;
-
 		// compare the length, and prefer to fold on the shorter one.
 		if( d1[0]*d1[0]+d1[1]*d1[1]+d1[2]*d1[2] < d2[0]*d2[0]+d2[1]*d2[1]+d2[2]*d2[2] ) {
 			//console.log( "YES")
@@ -1524,20 +1610,20 @@ function meshCloud(data, dims) {
 				let added = 0;
 				const baseOffset = offset*5;
 				let baseNormal;
-				let baseNormalN;
 
-				let n0,n1,n2,n3;
-				if( 1  && ( baseNormal = normals[baseOffset+4] ) ) {
+				let n0,n1,n2,n3,n4;
+				if( baseNormal = normals[baseOffset+4] ) {
 
 					const normDir = { dir:0, largest:0 };
-					let inv_ = (normDir.dir&7)?1:0;//normals[baseOffset+4].i;
-					let inv = inv_;
+					let inv;
 
 					getNormalState( normDir, baseNormal.n );
 					// goes through the center.
-				if(1)
+					if(1)
 					if( !content[baseOffset+0] ) {
 						// sanity check that 1 2 and 3 are good?
+						// big slice from here... which is not 0, even.
+						// small slice from not 3, odd
 						if(1)
 						if( !odd ) {
 							if( ( !content[baseOffset+1] )||( !content[baseOffset+2] )||( !content[baseOffset+3] ) )
@@ -1554,9 +1640,8 @@ function meshCloud(data, dims) {
 									inv = 1;
 									
 							}
-
 							const p0 = addPoint( normals[baseOffset+4]);
-							const p1 = addPoint( normals[baseOffset+1]);
+							const p1 = addPoint( n1 = normals[baseOffset+1]);
 							const p2 = addPoint( normals[baseOffset+2]);
 							const p3 = addPoint( normals[baseOffset+3]);
 							if( inv ){
@@ -1586,7 +1671,7 @@ function meshCloud(data, dims) {
 							}
 
 							const p0 = addPoint( normals[baseOffset+4]);
-							const p1 = addPoint( normals[baseOffset+1]);
+							const p1 = addPoint( n1 = normals[baseOffset+1]);
 							const p2 = addPoint( normals[baseOffset+2]);
 							const p3 = addPoint( normals[baseOffset+3]);
 							if( inv ){
@@ -1606,7 +1691,7 @@ function meshCloud(data, dims) {
 						if( !odd ) {
 							if( ( !content[baseOffset+0] )||( !content[baseOffset+2] )||( !content[baseOffset+3] ) )
 							{
-								//console.log( "Bad computation, missing a required intersection if the surface is here..." );
+								console.log( "Bad computation, missing a required intersection if the surface is here..." );
 								continue;
 							}
 							added++;
@@ -1634,14 +1719,14 @@ function meshCloud(data, dims) {
 						} else {
 							if( ( !content[baseOffset+0] )||( !content[baseOffset+2] )||( !content[baseOffset+3] ) )
 							{
-								//console.log( "Bad computation, missing a required intersection if the surface is here..." );
+								console.log( "Bad computation, missing a required intersection if the surface is here..." );
 								continue;
 							}
 							added++;
 							switch( normDir.dir ){
 								case 0: case 2: case 3: case 6:
 									inv = 0;
-									break;;
+									break;
 								default:
 									inv = 1;
 									break;
@@ -1662,14 +1747,13 @@ function meshCloud(data, dims) {
 							}
 
 						}
-						inv = inv_;
 					}
 					else if( !content[baseOffset+2] ) {
 						if(1)
 						if( !odd ) {
 							if( ( !content[baseOffset+1] )||( !content[baseOffset+0] )||( !content[baseOffset+3] ) )
 							{
-								//console.log( "Bad computation, missing a required intersection if the surface is here..." );
+								console.log( "Bad computation, missing a required intersection if the surface is here..." );
 								continue;
 							}
 							added++;
@@ -1682,7 +1766,7 @@ function meshCloud(data, dims) {
 							}							
 							const p0 = addPoint( normals[baseOffset+4]);
 							const p1 = addPoint( normals[baseOffset+0]);
-							const p2 = addPoint( normals[baseOffset+1]);
+							const p2 = addPoint( n2 = normals[baseOffset+1]);
 							const p3 = addPoint( normals[baseOffset+3]);
 							if( inv ) {
 								addFace( p0, p2, p1 );
@@ -1709,7 +1793,7 @@ function meshCloud(data, dims) {
 							}							
 							const p0 = addPoint( normals[baseOffset+4]);
 							const p1 = addPoint( normals[baseOffset+0]);
-							const p2 = addPoint( normals[baseOffset+1]);
+							const p2 = addPoint( n2 = normals[baseOffset+1]);
 							const p3 = addPoint( normals[baseOffset+3]);
 							if( inv ) {
 								addFace( p0, p2, p1 );
@@ -1719,10 +1803,8 @@ function meshCloud(data, dims) {
 								addFace( p0, p1, p2 );
 								addFace( p0, p2, p3 );
 								addFace( p0, p3, p1 );
-		
 							}
 						}
-						inv = inv_;
 					}
 					else if( !content[baseOffset+3] ) {
 						if(1)
@@ -1742,10 +1824,9 @@ function meshCloud(data, dims) {
 									//if( !(normDir.dir & 4) )inv = !inv;
 									break;
 							}
-
 							const p0 = addPoint( normals[baseOffset+4]);
 							const p1 = addPoint( normals[baseOffset+0]);
-							const p2 = addPoint( normals[baseOffset+1]);
+							const p2 = addPoint( n2 = normals[baseOffset+1]);
 							const p3 = addPoint( normals[baseOffset+2]);
 							if( inv ) {
 								addFace( p0, p2, p1 );
@@ -1756,7 +1837,6 @@ function meshCloud(data, dims) {
 								addFace( p0, p2, p3 );
 								addFace( p0, p3, p1 );
 							}
-
 
 						} else {
 							if( ( !content[baseOffset+1] )||( !content[baseOffset+2] )||( !content[baseOffset+0] ) )
@@ -1789,7 +1869,6 @@ function meshCloud(data, dims) {
 							}
 
 						}
-						inv = inv_;
 					}
 					else {
 						// all 5 gets - solid quad emit.
@@ -1797,11 +1876,16 @@ function meshCloud(data, dims) {
 						{
 							const l = normDir.largest;
 							inv = 0;
+							let o;
 							const p0 = addPoint( normals[baseOffset+4]);
-							const p1 = addPoint( normals[baseOffset+tetCentroidFacet[odd][inv][normDir.dir][l][0]]);
-							const p2 = addPoint( normals[baseOffset+tetCentroidFacet[odd][inv][normDir.dir][l][1]]);
-							const p3 = addPoint( normals[baseOffset+tetCentroidFacet[odd][inv][normDir.dir][l][2]]);
-							const p4 = addPoint( normals[baseOffset+tetCentroidFacet[odd][inv][normDir.dir][l][3]]);
+							const p1 = addPoint( normals[baseOffset+(o=tetCentroidFacet[odd][inv][normDir.dir][l][0])]);
+							const p2 = addPoint( normals[baseOffset+(o=tetCentroidFacet[odd][inv][normDir.dir][l][1])]);
+							const p3 = addPoint( normals[baseOffset+(o=tetCentroidFacet[odd][inv][normDir.dir][l][2])]);
+							const p4 = addPoint( normals[baseOffset+(o=tetCentroidFacet[odd][inv][normDir.dir][l][3])]);
+
+							usedTets[odd][inv][normDir.dir][l] = 1;
+
+
 							addFace( p0, p1, p2 );
 							addFace( p0, p2, p3 );
 							addFace( p0, p3, p4 );
@@ -1814,6 +1898,8 @@ function meshCloud(data, dims) {
 					if( !odd ) {
 						if(1)
 						if( (n0 = normals[baseOffset+3]  )) {
+							
+						if(1)
 							if( (n1 = normals[baseOffset+(1*dim0)*tetCount+1])
 							   && (n2 = normals[baseOffset+(1+1*dim0)*tetCount+0] )
 							   && (n3 = normals[baseOffset+( 1 )*tetCount+2]) ) {
@@ -1833,11 +1919,15 @@ function meshCloud(data, dims) {
 										//case 0: case 3: case 4: break; // y > z
 										//case 0: case 4: case 5: break; // y > x
 										case 0: case 1: case 3: {
-											if( ( normDir.largest ===3 )||( normDir.largest ===0 ) )
+											if( ( normDir.largest ===3 )||( normDir.largest ===0 ) ){
 												if( normDir.dir === 0 ) inv = !inv;
+												if( normDir.dir === 7 ) inv = !inv;
+												//console.log( "EMitting?", normDir, inv );
+											}
 											break; // x > z
 										}
-										default:break;
+										default:
+											break;
 									}
 									const p2 = addPoint( normals[baseOffset+3]);
 									const p1 = addPoint( normals[baseOffset + (1*dim0)*tetCount+1]);
@@ -1864,9 +1954,9 @@ function meshCloud(data, dims) {
 							}
 						
 							if(1)
-							if( (n1=normals[baseOffset+0] )
-							   && normals[baseOffset + ( 1*dim0*dim1 )*tetCount + 0] 
-							   && normals[baseOffset + ( 1*dim0*dim1 )*tetCount + 3] 
+							if( (n3=normals[baseOffset+0] )
+							   && (n2 = normals[baseOffset + ( 1*dim0*dim1 )*tetCount + 0] )
+							   && (n1 = normals[baseOffset + ( 1*dim0*dim1 )*tetCount + 3] )
 							   && normals[baseOffset + ( 1*dim0*dim1 )*tetCount + 4] 
 							   ) {  // and 3 because is 4
 								added++;
@@ -1880,12 +1970,12 @@ function meshCloud(data, dims) {
 										break;
 								}
 
-								const p0 = addPoint( normals[baseOffset+0]);
-								const p1 = addPoint( normals[baseOffset+3]);
-								const p2 = addPoint( normals[baseOffset + ( 1*dim0*dim1)*tetCount + 3]);
-								const p3 = addPoint( normals[baseOffset + ( 1*dim0*dim1)*tetCount + 0]);
+								const p0 = addPoint( n0);
+								const p1 = addPoint( n1);
+								const p2 = addPoint( n2);
+								const p3 = addPoint( n3);
 
-								if( getFold( n0.n, p0, p1, p2, p3 ) )
+							if( getFold( n0.n, p0, p1, p2, p3 ) )
 
 									if( inv ){
 										addFace( p0, p2, p1 );
@@ -1905,9 +1995,9 @@ function meshCloud(data, dims) {
 							}
 
 							if(1) // forward in-plane
-							if( content[baseOffset + 2] 
-									&& normals[baseOffset + (1*dim0)*tetCount + 0]
-									&& normals[baseOffset + (1*dim0)*tetCount + 1]
+							if( (n1 = normals[baseOffset + 2] )
+									&& (n2=normals[baseOffset + (1*dim0)*tetCount + 0])
+									&& (n3=normals[baseOffset + (1*dim0)*tetCount + 1])
 									&& normals[baseOffset + (1*dim0)*tetCount + 4]
 									 ) {
 								// nothing above, must be... this.
@@ -1927,9 +2017,9 @@ function meshCloud(data, dims) {
 								}
 								
 								const p0 = addPoint( n0 );
-								const p1 = addPoint( normals[baseOffset+2]);
-								const p2 = addPoint( normals[baseOffset + (1*dim0)*tetCount + 0]);
-								const p3 = addPoint( normals[baseOffset + (1*dim0)*tetCount + 1]);
+								const p1 = addPoint( n1 );
+								const p2 = addPoint( n2 );
+								const p3 = addPoint( n3 );
 
 								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
@@ -1947,11 +2037,11 @@ function meshCloud(data, dims) {
 										addFace( p1, p2, p3 );
 										addFace( p1, p3, p0 );
 									}
-
-							}
+		
+								}
 
 							if(1)
-							if( content[baseOffset+1] 
+							if( ( n1 = normals[baseOffset+1] )
 							  && normals[baseOffset + ( 1 )*tetCount + 2] 
 							  && normals[baseOffset + ( 1 )*tetCount + 0] 
 							  && normals[baseOffset + ( 1 )*tetCount + 4] 
@@ -1970,8 +2060,8 @@ function meshCloud(data, dims) {
 										}
 								
 								}
-								const p0 = addPoint( n0 = normals[baseOffset+1]);
-								const p1 = addPoint( normals[baseOffset+3]);
+								const p0 = addPoint( n1 );
+								const p1 = addPoint( n0 );
 								const p2 = addPoint( normals[baseOffset + (1 )*tetCount + 2]);
 								const p3 = addPoint( normals[baseOffset + ( 1)*tetCount + 0]);
 
@@ -1995,10 +2085,8 @@ function meshCloud(data, dims) {
 
 							}
 
-							inv = inv_;
 							if(1) // forward vertical
-								if( (n0 = normals[baseOffset+3] )
-								&& (n1 = normals[baseOffset + (1*dim0)*tetCount+1] )
+								if( (n1 = normals[baseOffset + (1*dim0)*tetCount+1] )
 								&& (n2 = normals[baseOffset + (1*dim0+1*dim0*dim1)*tetCount + 1])
 								&& (n3 = normals[baseOffset + (1*dim0*dim1)*tetCount + 3] )) {
 									const p0 = addPoint( n0);
@@ -2007,18 +2095,30 @@ function meshCloud(data, dims) {
 									const p3 = addPoint( n3);
 									inv = 0;
 
+									getNormalState( normDir, n0.n );
+			//if( normDir.dir !== 7 )continue;
+
 									switch( normDir.largest ){
 										case 0:case 1: case 3:
 											if( !(normDir.dir & 1) ) inv = 1;
 											break;
 										default:
-											if( (normDir.dir & 4) ) inv = 1;
-											if(! ( (normDir.dir != 2) && (normDir.dir != 5) ) ){
+											if( (normDir.dir & 4) ) {
+												if(( normDir.dir === 5)) {
+													inv = 0;
+												} else if( ( normDir.dir === 7))
+													inv = 0;
+												else
+													inv = 1;
+											} else if(! ( (normDir.dir != 2) && (normDir.dir != 5) ) ){
 												if( (normDir.dir & 2 ))
 													inv = 1;
 												else 
 													inv = 0;
-											};
+											}
+											else if( normDir.dir === 7 ) inv = 1-inv;
+											else if( normDir.dir === 0 ) inv = 1-inv;
+											//console.log( "emit:", normDir, inv, n0.n )
 											break;
 									}
 									if( getFold( n0.n, p0, p1, p2, p3 ) )
@@ -2040,19 +2140,21 @@ function meshCloud(data, dims) {
 								}
 
 							if(1) // forawrd-right plane... 
-							if( content[baseOffset+ ( 1*dim0*dim1)*tetCount + 3] 
+							if( ( n1 = normals[baseOffset+ ( 1*dim0*dim1)*tetCount + 3] )
 								&& content[baseOffset+ ( 1 + 1*dim0*dim1)*tetCount + 2] 
 								&& content[baseOffset + ( 1 )*tetCount + 2] 
 								) {
 								// right up...
-								inv = 0;
+								getNormalState( normDir, n1.n );
+														inv = 0;
 								if( (normDir.dir & 2) ) inv = 0; else inv = 1;
-
+								if ( (normDir.dir === 7 ) && ( normDir.largest === 2 || normDir.largest === 1 ) ) inv = 1;
 								added++;
-								
-								
+								//if( normDir.dir !== 2 ) continue;
+								//if( normDir.largest !== 4 ) continue;
+								//console.log( "Emit:", normDir, inv )
 								const p0 = addPoint( n0 );
-								const p1 = addPoint( normals[baseOffset + (1*dim0*dim1)*tetCount + 3]);
+								const p1 = addPoint( n1 );
 								const p2 = addPoint( normals[baseOffset + (1+1*dim0*dim1)*tetCount + 2]);
 								const p3 = addPoint( normals[baseOffset + ( 1 )*tetCount + 2]);
 								if( getFold( n0.n, p0, p1, p2, p3 ) )
@@ -2088,6 +2190,7 @@ function meshCloud(data, dims) {
 						// to the right
 
 						// directly up.
+	/* TODO - HYPERELIP FAIL */
 						if(1)
 						if( content[baseOffset+1] 
 							&& content[baseOffset+2] 
@@ -2108,11 +2211,13 @@ function meshCloud(data, dims) {
 										if(!( normDir.dir & 1) ) inv = !inv;
 										break;
 							}
-
+						
 							const p0 = addPoint( n0=normals[baseOffset+1]);
-							const p1 = addPoint( normals[baseOffset+2]);
-							const p2 = addPoint( normals[baseOffset + ( 1*dim0*dim1)*tetCount + 2]);
-							const p3 = addPoint( normals[baseOffset + ( 1*dim0*dim1)*tetCount + 1]);
+							const p1 = addPoint( n1 =normals[baseOffset+2]);
+							const p2 = addPoint( n2 =normals[baseOffset + ( 1*dim0*dim1)*tetCount + 2]);
+							const p3 = addPoint( n3= normals[baseOffset + ( 1*dim0*dim1)*tetCount + 1]);
+
+
 								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
@@ -2132,15 +2237,14 @@ function meshCloud(data, dims) {
 							}
 
 
-	
-						inv = inv_;
+	/* TODO - HYPERELIP FAIL */
 						if(1)
 						if( n0 = normals[baseOffset+3] ) { 
 							// and content[baseOffset+(1*dim0)*tetCount+0]  content[baseOffset+(1*dim0)*tetCount+3] content[baseOffset+(1*dim0)*tetCount+4]
 							//console.log( "Content Here:", odd, inv, content[baseOffset+0], content[baseOffset+1], content[baseOffset+2], content[baseOffset+3],content[baseOffset+4] );
-							inv = inv_;
 							// to the right - in-plane
-							if(1)
+
+						if(1)
 							if( content[baseOffset+(1*dim0)*tetCount+1] 
 							   && content[baseOffset+(1+1*dim0)*tetCount+0] 
 							   && content[baseOffset+( 1 )*tetCount+2] ) {
@@ -2149,7 +2253,7 @@ function meshCloud(data, dims) {
 								//console.log( "SOmething:",content[baseOffset+ ( 1*dim0)*tetCount + 0] ,content[baseOffset+ ( 1*dim0*dim1)*tetCount +1] ,content[baseOffset+ ( 1*dim0*dim1)*tetCount + 2] ,content[baseOffset+ ( 1*dim0*dim1)*tetCount + 3] ,content[baseOffset+ ( 1*dim0*dim1)*tetCount + 4]  )
 								if( normDir.dir & 4 ) inv = !inv;
 	
-								const p0 = addPoint( n0 = normals[baseOffset+3]);
+								const p0 = addPoint( n0 );
 								const p1 = addPoint( normals[baseOffset + ( 1 )*tetCount + 2]);
 								const p2 = addPoint( normals[baseOffset + (1+1*dim0)*tetCount + 0]);
 								const p3 = addPoint( normals[baseOffset + (1*dim0)*tetCount+1]);
@@ -2174,10 +2278,10 @@ function meshCloud(data, dims) {
 
 
 							if(1)
-							if( content[baseOffset+1]
-										&& normals[baseOffset + ( 1 )*tetCount + 2] 
+							if( (n3=normals[baseOffset+1])
+										&& (n1=normals[baseOffset + ( 1 )*tetCount + 2] )
 										&& normals[baseOffset + ( 1 )*tetCount + 4] 
-										&& normals[baseOffset + ( 1 )*tetCount + 0] 
+										&& (n2=normals[baseOffset + ( 1 )*tetCount + 0] )
 										) {  // and 3 because is 4
 								added++;
 
@@ -2194,11 +2298,15 @@ function meshCloud(data, dims) {
 											if(( normDir.dir & 4 )) inv = !inv;
 										}
 								}
-	
-								const p0 = addPoint( n0 = normals[baseOffset+1]);
-								const p1 = addPoint( normals[baseOffset+3]);
-								const p2 = addPoint( normals[baseOffset + ( 1 )*tetCount + 2]);
-								const p3 = addPoint( normals[baseOffset + ( 1 )*tetCount + 0]);
+		//console.log( "THINK THIS IS IT");
+
+
+		
+								const p0 = addPoint( n0);
+								const p1 = addPoint( n1);
+								const p2 = addPoint( n2);
+								const p3 = addPoint( n3);
+
 								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
@@ -2223,42 +2331,48 @@ function meshCloud(data, dims) {
 
 						// 
 						// odd 2 - above/forward line across
-						inv = inv_;
 						if(1)
 						if( n0 = normals[baseOffset + 2] ) {
 
+	/* TODO - HYPERELIP FAIL */
 							if(1)	
 							if( (n1 = normals[baseOffset + (1*dim0)*tetCount + 0] )
 									&& (n2 =normals[baseOffset + (1*dim0)*tetCount + 1] )
 									&& (n3 =normals[baseOffset + 3] )
-									&& (normals[baseOffset + (1*dim0)*tetCount + 4] ) // make sure the surface goes here...
+									&& (n4 = normals[baseOffset + (1*dim0)*tetCount + 4] ) // make sure the surface goes here...
 									 ) {
-
+								
+								getNormalState( normDir, n4.n );
 								// nothing above, must be... this.
 								added++;
-								inv = 0;
+								inv = 0;//n4.i;
+
+								//if( normDir.dir  != 7 ) continue;
+								//if( normDir.dir  != 5 ) continue;
+								//if( normDir.largest !== 1 ) continue;
+								//if( normDir.largest !== 1 ) continue;
 								//if( !(normDir.dir &4)  ) inv = 1; else inv = 0;
 								switch(normDir.dir  ){
 									case 7: case 5:
-										inv = 1;
+										inv = 1-inv;
 										break;;
 									case 3: case 1:
 										if( normDir.largest === 3 || normDir.largest === 1|| normDir.largest === 0 )
-											inv = 1;
+											inv = 1-inv;
 										break;
 									case 2: case 0:
 										break;
 									case 6: case 4:
 										if( normDir.largest === 2 || normDir.largest === 5 || normDir.largest === 4 ) 
-											inv = 1;
-										break;
+											inv = 1-inv;
+											break;
 								}
-
+								
 								const p0 = addPoint( n0);
 								const p1 = addPoint( n1);
 								const p2 = addPoint( n2);
 								const p3 = addPoint( n3);
-								//console.log( "Emit:",normDir, inv )
+								//console.log( "Emit:",normDir, inv, n0.n, n0.i )
 								if( getFold( n0.n, p0, p1, p2, p3 ) )
 									if( inv ){
 										addFace( p0, p2, p1 );
@@ -2280,9 +2394,9 @@ function meshCloud(data, dims) {
 							if(1)
 							if( (n1 = normals[baseOffset+(1*dim0*dim1)*tetCount+2])
 								&& (n2 = normals[baseOffset + (1*dim0+1*dim0*dim1)*tetCount + 0])
-								//&& ( normals[baseOffset + (1*dim0+1*dim0*dim1)*tetCount + 4])
 								&& (n3 = normals[baseOffset + (1*dim0)*tetCount + 0])
 								 ) {
+									getNormalState( normDir, n0.n );
 
 								// nothing above, must be... this.
 								added++;
@@ -2301,6 +2415,11 @@ function meshCloud(data, dims) {
 										}
 										break;
 									default:
+										//if( normDir.dir !== 6 ) continue;
+										if( normDir.dir === 6 ) { inv = 1;
+											 break; 
+										}
+									//console.log( "Emit:",x, y, z, odd, normDir, inv )
 										if( normDir.dir & 1) {
 											inv = 1;
 										}
@@ -2332,14 +2451,12 @@ function meshCloud(data, dims) {
 							// forward diagonal of 2... 
 						}
 
-						inv = inv_;
 						if(1) // good!
 						// odd, 'up'(y), x, 
 						if( n0 = normals[baseOffset+1] ) {
 							if( (n1 = normals[baseOffset+ ( 1*dim0*dim1)*tetCount + 1] ) 
 								&& (n2 = normals[baseOffset+ ( 1 + 1*dim0*dim1)*tetCount + 0] )
-								//&& ( normals[baseOffset+ ( 1 + 1*dim0*dim1)*tetCount + 4] )
-								&& normals[baseOffset + ( 1 )*tetCount + 0]
+								&& (n3 = normals[baseOffset + ( 1 )*tetCount + 0])
 								) {
 									const l1 =1/Math.sqrt(  n0.n[0]*n0.n[0] + n0.n[1]*n0.n[1] + n0.n[2]*n0.n[2] ) ;
 									const c = [n0.n[0]*l1,n0.n[1]*l1,n0.n[2]*l1];
@@ -2351,15 +2468,16 @@ function meshCloud(data, dims) {
 									//if( c[0]*c[0]+c[1]*c[1]+c[2]*c[2] < 0.5 )
 									if( d > 0.8 )
 									{
+										getNormalState( normDir, n0.n );
 										// right up...
 										// make sure this is a complete thing...
 										added++;
 										if( normDir.dir & 2 ) inv = 0; else inv = 1;
-
-										const p0 = addPoint( n0 = normals[baseOffset+1]);
-										const p1 = addPoint( normals[baseOffset + (1*dim0*dim1)*tetCount + 1]);
-										const p2 = addPoint( n2);
-										const p3 = addPoint( normals[baseOffset + ( 1 )*tetCount + 0]);
+					
+										const p0 = addPoint( n0 );
+										const p1 = addPoint( n1 );
+										const p2 = addPoint( n2 );
+										const p3 = addPoint( n3 );
 										if( getFold( n0.n, p0, p1, p2, p3 ) )
 											if( inv ){
 												addFace( p0, p2, p1 );
@@ -2376,7 +2494,10 @@ function meshCloud(data, dims) {
 												addFace( p1, p2, p3 );
 												addFace( p1, p3, p0 );
 											}
-									}
+									}//else console.log( "threw out face?");
+									
+
+			}else {
 							}
 
 							
@@ -2592,7 +2713,7 @@ function meshCloud(data, dims) {
 						  && (n1 = normals[baseOffset + (1*dim0)*tetCount + 1] )
 						  && (n2 = normals[baseOffset + (1*dim0 + 1)*tetCount + 0])
 						  //&& (normals[baseOffset + (1*dim0 + 1)*tetCount + 4])
-						  && (n3 = normals[baseOffset + ( 1 )*tetCount + 2])) {
+						  && (n3 = normals[baseOffset + ( 1 )*tetCount + 2])) { // 'lower right' (3)   (odd 1 to even 2 )
 
 							const normDir = { dir:0, largest:0 };
 							  getNormalState( normDir, n0.n );
@@ -2641,6 +2762,7 @@ function meshCloud(data, dims) {
 	// update geometry (could wait for index.html to do this?
 	//if( showGrid )
 	//	opts.geometryHelper.markDirty();
+	//console.log( "These got used so far:", usedTets);
 
 	opts.points  = points;   
 	opts.normals = normals;
