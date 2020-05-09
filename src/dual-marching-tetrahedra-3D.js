@@ -357,6 +357,8 @@ const tetCentroidFacet =[
 
 	const elements = opts.elements;
 	var vertices = opts.vertices || []
+	, normalVertices = opts.normalVertices || null
+	, normalColors = opts.normalColors || null
 	, faces = opts.faces || [];
 	var smoothShade = opts.smoothShade || false;
 	var newData = [];
@@ -489,6 +491,16 @@ function TetVert( p, n, p1, p2, p3, types, deltas ) {
 	//var l2 = Math.sqrt( del2[0]*del2[0]+del2[1]*del2[1] +del2[2]*del2[2] );
 	//var l3 = Math.sqrt( del3[0]*del3[0]+del3[1]*del3[1] +del3[2]*del3[2] );
 	var l = l1+l2+l3;
+	if( 0 && normalVertices ) {
+		normalVertices.push( new THREE.Vector3( p1.vertBuffer[0],p1.vertBuffer[1],p1.vertBuffer[2] ))
+		normalVertices.push( new THREE.Vector3( p1.vertBuffer[0] + l*p1.normalBuffer[0]/50,p1.vertBuffer[1] + l*p1.normalBuffer[1]/50,p1.vertBuffer[2] + l*p1.normalBuffer[2]/50 ));
+
+		normalVertices.push( new THREE.Vector3( p2.vertBuffer[0],p2.vertBuffer[1],p2.vertBuffer[2] ))
+		normalVertices.push( new THREE.Vector3( p2.vertBuffer[0] + l*p2.normalBuffer[0]/50,p2.vertBuffer[1] + l*p2.normalBuffer[1]/50,p2.vertBuffer[2] + l*p2.normalBuffer[2]/50 ));
+
+		normalVertices.push( new THREE.Vector3( p3.vertBuffer[0],p3.vertBuffer[1],p3.vertBuffer[2] ))
+		normalVertices.push( new THREE.Vector3( p3.vertBuffer[0] + l*p3.normalBuffer[0]/50,p3.vertBuffer[1] + l*p3.normalBuffer[1]/50,p3.vertBuffer[2] + l*p3.normalBuffer[2]/50 ));
+	};
 
 	// bigger than the grey circle; which puts them all co-linear.
 	if( l > 0.1 ) {
@@ -580,9 +592,19 @@ function TetVert( p, n, p1, p2, p3, types, deltas ) {
 		p[0] = (p1.vertBuffer[0]+p2.vertBuffer[0]+p3.vertBuffer[0])/3;
 		p[1] = (p1.vertBuffer[1]+p2.vertBuffer[1]+p3.vertBuffer[1])/3;
 		p[2] = (p1.vertBuffer[2]+p2.vertBuffer[2]+p3.vertBuffer[2])/3;
-		n[0] = p1.normalBuffer[0];
-		n[1] = p1.normalBuffer[1];
-		n[2] = p1.normalBuffer[2];
+		n[0] = p1.normalBuffer[0] + p2.normalBuffer[0] + p3.normalBuffer[0];
+		n[1] = p1.normalBuffer[1] + p2.normalBuffer[1] + p3.normalBuffer[1];
+		n[2] = p1.normalBuffer[2] + p2.normalBuffer[2] + p3.normalBuffer[2];
+		const nLen = 1/Math.sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+		n[0] *= nLen;
+		n[1] *= nLen;
+		n[2] *= nLen;
+		if( normalVertices ) {
+			normalVertices.push( new THREE.Vector3( p[0],p[1],p[2] ))
+			normalVertices.push( new THREE.Vector3( p[0] + n[0]/2,p[1] + n[1]/2,p[2] + n[2]/2 ));
+			normalColors.push( new THREE.Color( 255,0,255,255 ))
+			normalColors.push( new THREE.Color( 255,0,255,255 ))
+		};
 	}
 
 }
@@ -784,7 +806,7 @@ function meshCloud(data, dims) {
 			pointMergeHolder[0].push( null ); 
 		}
 	}
-	
+	pointStateHolder.length = 0;	
 	// all work space has been allocated by this point.
 	// now, for each layer, compute inside-outside crossings ('cross').. which interestingly relates to 'cross product' but in a 2D way...
 
@@ -920,7 +942,6 @@ function meshCloud(data, dims) {
 		}
 	}
 
-
 	for( var z = 0; z < dim2; z++ ) {
 	
 		let odd = 0;
@@ -1040,10 +1061,31 @@ function meshCloud(data, dims) {
 								fnorm[1]=fnorm[2]*tmp[0] - a       *tmp[2];
 								fnorm[2]=a       *tmp[1] - b       *tmp[0];
 								let ds;
-								if( (ds=fnorm[0]*fnorm[0]+fnorm[1]*fnorm[1]+fnorm[2]*fnorm[2]) > 0.00000001 ){
+								if( (ds=fnorm[0]*fnorm[0]+fnorm[1]*fnorm[1]+fnorm[2]*fnorm[2]) > 0.000001 ){
 									ds = 1/Math.sqrt(ds);
 									fnorm[0] *= ds;fnorm[1] *= ds;fnorm[2] *= ds;
+									if( normalVertices ) {
+										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
+										normalVertices.push( new THREE.Vector3( v2[0],v2[1],v2[2] ))
+										normalVertices.push( new THREE.Vector3( v2[0],v2[1],v2[2] ))
+										normalVertices.push( new THREE.Vector3( v3[0],v3[1],v3[2] ))
+										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
+										normalVertices.push( new THREE.Vector3( v3[0],v3[1],v3[2] ))
+
+										normalColors.push( new THREE.Color( 255,0,0,255 ))
+										normalColors.push( new THREE.Color( 255,0,0,255 ))
+										normalColors.push( new THREE.Color( 0,255,0,255 ))
+										normalColors.push( new THREE.Color( 0,255,0,255 ))
+										normalColors.push( new THREE.Color( 0,0,255,255))
+										normalColors.push( new THREE.Color( 0,0,255,255 ))
+
+										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
+										normalVertices.push( new THREE.Vector3( v1[0] - fnorm[0]/2,v1[1] - fnorm[1]/2,v1[2] - fnorm[2]/2 ));
+										normalColors.push( new THREE.Color( 255,255,255,255 ))
+										normalColors.push( new THREE.Color( 255,255,255,255 ))
+									};
 								}else {
+									// basically never happens given the initial triangle characterization.
 									//console.log( "1Still not happy...", fnorm, ds,vA, vB, vC );
 									// b->A  c->A
 									fnorm[0] = vB[0]-vA[0];fnorm[1] = vB[1]-vA[1];fnorm[2] = vB[2]-vA[2];
@@ -1122,6 +1164,22 @@ function meshCloud(data, dims) {
 		}
 	}
 
+	// normalize the normals.
+	for( var ps = 0; ps < pointStateHolder.length; ps++ ) {
+		const pointstate = pointStateHolder[ps];
+		const s = 1/Math.sqrt(pointstate.normalBuffer[0]*pointstate.normalBuffer[0]+pointstate.normalBuffer[1]*pointstate.normalBuffer[1]+pointstate.normalBuffer[2]*pointstate.normalBuffer[2] );
+		pointstate.normalBuffer[0] *= -s;
+		pointstate.normalBuffer[1] *= -s;
+		pointstate.normalBuffer[2] *= -s;
+		if( normalVertices ) {
+			normalVertices.push( new THREE.Vector3( pointstate.vertBuffer[0],pointstate.vertBuffer[1],pointstate.vertBuffer[2] ))
+			normalVertices.push( new THREE.Vector3( pointstate.vertBuffer[0] + pointstate.normalBuffer[0]/2,pointstate.vertBuffer[1] + pointstate.normalBuffer[1]/2,pointstate.vertBuffer[2] + pointstate.normalBuffer[2]/2 ));
+			normalColors.push( new THREE.Color( 255,255,0,255 ))
+			normalColors.push( new THREE.Color( 255,255,0,255 ))
+	};
+
+	}
+
 
 	for( var z = 0; z < dim2; z++ ) {
 	
@@ -1131,6 +1189,7 @@ function meshCloud(data, dims) {
 		// for all bounday crossed points, generate the faces from the intersection points.
 		for( var y = 0; y < dim1; y++ ) {
 			for( var x = 0; x < dim0; x++ ) {
+
 
 				const normOffset = (x + (y*dim0) + z*dim0*dim1)*5;
 				const baseOffset = (x + (y*dim0) + z*dim0*dim1)*6;
@@ -1206,6 +1265,7 @@ function meshCloud(data, dims) {
 							//console.log( "vertices", tet, useFace, tri, "odd:",odd, "invert:", invert, "pos:", x, y, z, "dels:", pointStateHolder[ai].typeDelta, pointStateHolder[bi].typeDelta, pointStateHolder[ci].typeDelta, "a:", pointStateHolder[ai].invert, pointStateHolder[ai].type1, pointStateHolder[ai].type2, "b:", pointStateHolder[bi].invert, pointStateHolder[bi].type1, pointStateHolder[bi].type2, "c:", pointStateHolder[ci].invert, pointStateHolder[ci].type1, pointStateHolder[ci].type2 );
 							const p = [0,0,0], n = [0,0,0];
 							TetVert( p, n, pointStateHolder[ai], pointStateHolder[bi], pointStateHolder[ci] );
+
 							normals[normOffset+tet] = {id:0,p:p,n:n, i:invert};
 							//console.log( "Setting normal:", x, y, z, dataOffset, normOffset, tet, bits[dataOffset] );
 				                }else {
@@ -1306,12 +1366,12 @@ function meshCloud(data, dims) {
 			const tmp1 = [vertices[bi].x-vertices[ai].x, vertices[bi].y-vertices[ai].y, vertices[bi].z-vertices[ai].z];
 			const tmp2 = [vertices[ci].x-vertices[ai].x, vertices[ci].y-vertices[ai].y, vertices[ci].z-vertices[ai].z];
 			n = cross( [0,0,0], tmp1, tmp2);
-			const s = 1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+			const s = -1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
 			n[0] *= s;
 			n[1] *= s;
 			n[2] *= s;
 		}
-		return faces.push( f = new THREE.Face3( ai, bi, ci, new THREE.Vector3(n[0],n[1],n[2]) ) );
+		return faces.push( f = new THREE.Face3( ai, ci, bi, new THREE.Vector3(n[0],n[1],n[2]) ) );
 
 	}
 	function addPoint( p ) {
@@ -1441,7 +1501,7 @@ function meshCloud(data, dims) {
 						if( !odd ) {
 							if( ( !content[baseOffset+1] )||( !content[baseOffset+2] )||( !content[baseOffset+3] ) )
 							{
-								console.log( "Bad computation, missing a required intersection if the surface is here..." );
+								//console.log( "Bad computation, missing a required intersection if the surface is here..." );
 								continue;
 							}
 							added++;
@@ -1471,7 +1531,7 @@ function meshCloud(data, dims) {
 						} else {
 							if( ( !content[baseOffset+1] )||( !content[baseOffset+2] )||( !content[baseOffset+3] ) )
 							{
-								console.log( "Bad computation, missing a required intersection if the surface is here..." );
+								//console.log( "Bad computation, missing a required intersection if the surface is here..." );
 								continue;
 							}
 							added++;
@@ -1505,7 +1565,7 @@ function meshCloud(data, dims) {
 						if( !odd ) {
 							if( ( !content[baseOffset+0] )||( !content[baseOffset+2] )||( !content[baseOffset+3] ) )
 							{
-								console.log( "Bad computation, missing a required intersection if the surface is here..." );
+								//console.log( "Bad computation, missing a required intersection if the surface is here..." );
 								continue;
 							}
 							added++;
@@ -1533,7 +1593,7 @@ function meshCloud(data, dims) {
 						} else {
 							if( ( !content[baseOffset+0] )||( !content[baseOffset+2] )||( !content[baseOffset+3] ) )
 							{
-								console.log( "Bad computation, missing a required intersection if the surface is here..." );
+								//console.log( "Bad computation, missing a required intersection if the surface is here..." );
 								continue;
 							}
 							added++;
@@ -1568,7 +1628,7 @@ function meshCloud(data, dims) {
 						if( !odd ) {
 							if( ( !content[baseOffset+1] )||( !content[baseOffset+0] )||( !content[baseOffset+3] ) )
 							{
-								console.log( "Bad computation, missing a required intersection if the surface is here..." );
+								//console.log( "Bad computation, missing a required intersection if the surface is here..." );
 								continue;
 							}
 							added++;
@@ -2293,7 +2353,6 @@ function meshCloud(data, dims) {
 						  && (n0 = normals[baseOffset + (1 + 1*dim0)*tetCount + 0])
 						  //&& (normals[baseOffset + (1 + 1*dim0)*tetCount + 4])
 						  && (n3 = normals[baseOffset + ( 1 )*tetCount + 2] )) {
-							  
 							const normDir = { dir:0, largest:0 };
 							getNormalState( normDir, n0.n );
 							let inv = 0;//!(( normDir.dir ^ 0x7 ) & 7);
@@ -2306,36 +2365,34 @@ function meshCloud(data, dims) {
 									break;;
 							}
 
-						const p0 = addPoint( n0);
+							const p0 = addPoint( n0);
 							const p1 = addPoint( n1);
 							const p2 = addPoint( n2);
 							const p3 = addPoint( n3);
 							if( getFold( n0.n, p0, p1, p2, p3 ) )
-							if( inv ){
-								addFace( p0, p2, p1 );
-								addFace( p0, p3, p2 );
-							}else {
-								addFace( p0, p1, p2 );
-								addFace( p0, p2, p3 );
-							}
-						else
-							if( inv ){
-								addFace( p1, p3, p2 );
-								addFace( p1, p0, p3 );
-							}else {
-								addFace( p1, p2, p3 );
-								addFace( p1, p3, p0 );
-							}
+								if( inv ){
+									addFace( p0, p2, p1 );
+									addFace( p0, p3, p2 );
+								}else {
+									addFace( p0, p1, p2 );
+									addFace( p0, p2, p3 );
+								}
+							else
+								if( inv ){
+									addFace( p1, p3, p2 );
+									addFace( p1, p0, p3 );
+								}else {
+									addFace( p1, p2, p3 );
+									addFace( p1, p3, p0 );
+								}
 						}
 				//console.log( "status:", x, y, z, baseOffset, n0, n1, n2, n3 );
 						if(1)
 						if( (n0 = normals[baseOffset+3] )
 						  && (n3 = normals[baseOffset + (1*dim0*dim1)*tetCount + 3] )
 						  && (n2 = normals[baseOffset + (1*dim0 + 1*dim0*dim1)*tetCount +1])
-						  && (n2 = normals[baseOffset + (1*dim0 + 1*dim0*dim1)*tetCount +4])
 						  && (n1 = normals[baseOffset + (1*dim0 )*tetCount + 1] )) {
 							  // this feels large.
-
 							const normDir = { dir:0, largest:0 };
 							getNormalState( normDir, n0.n );
 							let inv = 0;//normDir.dir&7;
@@ -2450,7 +2507,7 @@ function meshCloud(data, dims) {
 							}
 						}
 						// there are two more triangles inverted on this TODO
-						if(1)
+						if(1) // foward dots left
 						if( (n0 = normals[baseOffset+2] )
 						  && (n1 = normals[baseOffset + (1*dim0*dim1)*tetCount + 2] )
 						  && (n2 = normals[baseOffset + (1*dim0*dim1 + 1*dim0)*tetCount + 0])
@@ -2489,7 +2546,7 @@ function meshCloud(data, dims) {
 							}
 						}
 						
-						if(1)
+						if(1) // towards big dits
 						if( (n0 = normals[baseOffset+3] )
 						  && (n1 = normals[baseOffset + (1*dim0)*tetCount + 1] )
 						  && (n2 = normals[baseOffset + (1*dim0 + 1)*tetCount + 0])
