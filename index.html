@@ -73,7 +73,7 @@
 	<script type="text/javascript">
 		var stats, scene, renderer, composer;
 		var camera, cameraControl;
-		var geometry, surfacemesh, wiremesh;
+		var geometry, geometryNormals, surfacemesh, wiremesh, lineSegments
 		var meshers = {
 		    'Dual Marching Tetrahdra (DCL-volume)' : DualMarchingTetrahedra3
 		  , 'Marching Tetraheda 4 (DCL-volume)' : MarchingTetrahedra4
@@ -91,6 +91,7 @@
 
 		  scene.remove( surfacemesh );
 		  scene.remove( wiremesh );
+		  scene.remove( lineSegments );
 
 	  //Create surface mesh
 			if( document.getElementById( "showGrid").checked) {
@@ -100,6 +101,10 @@
 				geometry	= new THREE.Geometry();
 				geometry.vertices.length = 0;
 				geometry.faces.length = 0;
+				geometryNormals	= new THREE.Geometry();
+				geometryNormals.vertices.length = 0;
+				geometryNormals.faces.length = 0;
+				geometryNormals.colors.length = 0;
 			}
 
 		  var mesher = meshers[ document.getElementById("mesher").value ]
@@ -173,6 +178,8 @@
 		  inflation : inflatVal,
 		  vertices : geometry.vertices,
 		  faces : geometry.faces,
+		  normalVertices : geometryNormals && geometryNormals.vertices,
+		  normalColors : geometryNormals && geometryNormals.colors,
 		  smoothShade : document.getElementById( "smoothShade" ).checked,
 		  showGrid : document.getElementById( "showGrid").checked,
 		  geometryHelper : geometryHelper,
@@ -303,16 +310,6 @@
 		  	document.getElementById("facecount").value = geometryHelper.usedFaces/3;
 
 		}
-		  /*
-		  if( opts.smoothShade ){
-			for (var i=0; i<geometry.faces.length; ++i) {
-				// this is a lot of redundant work... 
-				geometry.faces[i].vertexNormals[0].normalize();
-				geometry.faces[i].vertexNormals[1].normalize();
-				geometry.faces[i].vertexNormals[2].normalize();
-			}
-		}
-		*/
 	}
 	  document.getElementById("meshtime").value = (end - start) / 1000.0;
 
@@ -354,6 +351,14 @@
 		wiremesh = new THREE.Mesh(geometry, wirematerial);
 		wiremesh.doubleSided = true;
 
+		var linematerial = new THREE.LineBasicMaterial({
+				color : 0xffffff
+			  , vertexColors: THREE.VertexColors
+			});
+
+		lineSegments = new THREE.LineSegments( geometryNormals, linematerial );
+		scene.add( lineSegments );
+
 		scene.add( surfacemesh );
 		scene.add( wiremesh );
 
@@ -361,6 +366,9 @@
 			wiremesh.position.x = surfacemesh.position.x = -(bb.max.x + bb.min.x) / 2.0;
 			wiremesh.position.y = surfacemesh.position.y = -(bb.max.y + bb.min.y) / 2.0;
 			wiremesh.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
+			lineSegments.position.x = surfacemesh.position.x = -(bb.max.x + bb.min.x) / 2.0;
+			lineSegments.position.y = surfacemesh.position.y = -(bb.max.y + bb.min.y) / 2.0;
+			lineSegments.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
 		}
 	
 		window.doInit = ()=>{
