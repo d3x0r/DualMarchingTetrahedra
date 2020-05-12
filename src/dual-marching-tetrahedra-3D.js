@@ -1543,18 +1543,34 @@ if(0) {
 				else
 					n = [faceNormals[ai],faceNormals[ci],faceNormals[bi]];// these are three.vectors isntead...
 			}else {
-				const tmp1 = [vertices[bi].x-vertices[ai].x, vertices[bi].y-vertices[ai].y, vertices[bi].z-vertices[ai].z];
-				const tmp2 = [vertices[ci].x-vertices[ai].x, vertices[ci].y-vertices[ai].y, vertices[ci].z-vertices[ai].z];
-				n = cross( [0,0,0], tmp1, tmp2);
-				const s = -1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
-				n[0] *= s;
-				n[1] *= s;
-				n[2] *= s;
-				n = new THREE.Vector3(n[0],n[1],n[2]);
+				if( opts.geometryHelper )
+					{
+						const tmp1 = [bi_.p[0]-ai_.p[0], bi_.p[1]-ai_.p[1], bi_.p[2]-ai_.p[2]];
+						const tmp2 = [ci_.p[0]-ai_.p[0], ci_.p[1]-ai_.p[1], ci_.p[2]-ai_.p[2]];
+						n = cross( [0,0,0], tmp1, tmp2);
+						const s = -1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+						n[0] *= s;
+						n[1] *= s;
+						n[2] *= s;
+						//n = new THREE.Vector3(n[0],n[1],n[2]);
+					}else {
+						const tmp1 = [vertices[bi].x-vertices[ai].x, vertices[bi].y-vertices[ai].y, vertices[bi].z-vertices[ai].z];
+						const tmp2 = [vertices[ci].x-vertices[ai].x, vertices[ci].y-vertices[ai].y, vertices[ci].z-vertices[ai].z];
+						n = cross( [0,0,0], tmp1, tmp2);
+						const s = -1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+						n[0] *= s;
+						n[1] *= s;
+						n[2] *= s;
+						n = new THREE.Vector3(n[0],n[1],n[2]);
+					}
 			}
 		}
 		else if( !opts.geometryHelper ){
 			n = [faceNormals[ai],faceNormals[ci],faceNormals[bi]];// these are three.vectors isntead...
+		}else {
+			let x = n[1];
+			n[1] = n[2];
+			n[2] = x;
 		}
 		if( opts.geometryHelper )	{
 			return opts.geometryHelper.addFace( ai, ci, bi, n, false	);
@@ -1663,19 +1679,19 @@ if(0) {
 			const p3 = addPoint( n4);
 			if( f ) 
 				if( inv ){
-					addFace( p0, p2, p1, [n1.n,n3.n,n2.n] );
-					addFace( p0, p3, p2, [n1.n,n4.n,n3.n] );
+					addFace( p0, p2, p1, (!smoothShade)?null:[n1.n,n3.n,n2.n] );
+					addFace( p0, p3, p2, (!smoothShade)?null:[n1.n,n4.n,n3.n] );
 				}else {
-					addFace( p0, p1, p2, [n1.n,n2.n,n3.n] );
-					addFace( p0, p2, p3, [n1.n,n3.n,n4.n] );
+					addFace( p0, p1, p2, (!smoothShade)?null:[n1.n,n2.n,n3.n] );
+					addFace( p0, p2, p3, (!smoothShade)?null:[n1.n,n3.n,n4.n] );
 				}
 			else
 				if( inv ){
-					addFace( p1, p3, p2, [n2.n,n4.n,n3.n] );
-					addFace( p1, p0, p3, [n2.n,n1.n,n4.n] );
+					addFace( p1, p3, p2, (!smoothShade)?null:[n2.n,n4.n,n3.n] );
+					addFace( p1, p0, p3, (!smoothShade)?null:[n2.n,n1.n,n4.n] );
 				}else {
-					addFace( p1, p2, p3, [n2.n,n3.n,n4.n] );
-					addFace( p1, p3, p0, [n2.n,n4.n,n1.n] );
+					addFace( p1, p2, p3, (!smoothShade)?null:[n2.n,n3.n,n4.n] );
+					addFace( p1, p3, p0, (!smoothShade)?null:[n2.n,n4.n,n1.n] );
 				}
 		}else {
 			let a = measureTriFace( n1.p, n2.p, n3.p );
@@ -1685,9 +1701,9 @@ if(0) {
 				const p2 = addPoint( n2);
 				const p3 = addPoint( n3);
 				if( inv )
-					addFace( p1, p3, p2, [n1.n,n3.n,n2.n] );
+					addFace( p1, p3, p2, (!smoothShade)?null:[n1.n,n3.n,n2.n] );
 				else
-					addFace( p1, p2, p3, [n1.n,n2.n,n3.n] );
+					addFace( p1, p2, p3, (!smoothShade)?null:[n1.n,n2.n,n3.n] );
 			}
 			a = measureTriFace( n1.p, n3.p, n4.p );
 			if( a > 0.1 ){
@@ -1696,9 +1712,9 @@ if(0) {
 				const p2 = addPoint( n3);
 				const p3 = addPoint( n4);
 				if( inv )
-					addFace( p1, p3, p2,[n1.n,n3.n,n2.n] );
+					addFace( p1, p3, p2,(!smoothShade)?null:[n1.n,n3.n,n2.n] );
 				else
-					addFace( p1, p2, p3,[n1.n,n2.n,n3.n] );
+					addFace( p1, p2, p3,(!smoothShade)?null:[n1.n,n2.n,n3.n] );
 			}
 
 		}

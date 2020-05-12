@@ -244,7 +244,7 @@ function DualGeometryBuffer() {
     buffer.addFace = function( a,b,c, n, i ){
         while( (this.usedFaces+3) >= this.availableFaces )
             this.expandFaces();
-        if( n instanceof Array ) {
+        if( n instanceof Array && n[0] instanceof Array ) {
             a = this.copyPoint( a, n[0], face_i, i );
             b = this.copyPoint( b, n[1], face_j, i );
             c = this.copyPoint( c, n[2], face_k, i );

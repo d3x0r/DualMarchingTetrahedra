@@ -319,9 +319,9 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 
 			float index;
 
-#define TEXTURE_SCALAR 1.0
+#define TEXTURE_SCALAR 8.0
 #define NUMBER_OF_TEXTURE_TYPES textureStackSize
-#define _3D_TEXTURE_LAYER_CONVERSION ( (1.0/NUMBER_OF_TEXTURE_TYPES) / 2.0 ) 
+#define _3D_TEXTURE_LAYER_CONVERSION ( -(1.0/NUMBER_OF_TEXTURE_TYPES) / 2.0 ) 
 
 			// if type 1 isn't void; use type 1.
 			float sX = 1.0/(elementX*elementZ);
@@ -332,7 +332,7 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			//float eY = (2.0 * elementY + curElementPos.y)*sY;
 
 			vec4 v_type1 = texture2D( elementMap3, vec2( eX, eY ) );
-			float type1 =  v_type1.r * 256.0/NUMBER_OF_TEXTURE_TYPES;// + _3D_TEXTURE_LAYER_CONVERSION;
+			float type1 =  v_type1.r * 256.0/NUMBER_OF_TEXTURE_TYPES + _3D_TEXTURE_LAYER_CONVERSION;
 			float type2 = texture2D( elementMap3, vec2( eX + (curElementDirs.x * sX), eY ) ).r * 256.0/NUMBER_OF_TEXTURE_TYPES + _3D_TEXTURE_LAYER_CONVERSION;
 			float type3 = texture2D( elementMap3, vec2( eX, eY + (curElementDirs.y * sY) ) ).r * 256.0/NUMBER_OF_TEXTURE_TYPES + _3D_TEXTURE_LAYER_CONVERSION;
 			float eXz = ( mod((curElementPos.z+curElementDirs.z), elementZ) * elementX + curElementPos.x ) / (elementX*elementZ);
@@ -343,7 +343,7 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			gl_FragColor = vec4( mod(eX*elementZ,1.0), mod(eY*elementZ,1.0), curElementPos.z/(elementZ*elementZ), 1.0 );
 			//return;
 			//gl_FragColor = vec4( mod(eX+(curElementDirs.x/(elementX*elementZ))*elementZ,1.0)*curDeltas.x, mod(eX*elementZ,1.0)*(1.0-curDeltas.x), 0.0, 1.0 );
-			//gl_FragColor = vec4( type4, type2, type3, 1.0);
+			gl_FragColor = vec4( type4, type2, type3, 1.0);
 			//gl_FragColor = vec4( mod((eX*elementZ),1.0) , mod(eY*elementZ,1.0),curElementPos.z/(elementZ*elementZ), 1.0);
 			//return;
 			//gl_FragColor = vec4( curElementPos.x/elementX, curElementPos.y/elementY, curElementPos.z/(elementZ*elementZ),1.0 );
@@ -374,9 +374,10 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 #define MAGIC_FUNCTION vec4( pow(cxy1.rgb * zzNormal.z,vec_2) + pow(cyz1.rgb * zzNormal.x,vec_2) + pow(cxz1.rgb * zzNormal.y,vec_2), \
 				1.0-sqrt(pow( ( 1.0-cxy1.a )* zzNormal.z,2.0) + pow((1.0-cyz1.a) * zzNormal.x,2.0) + pow((1.0-cxz1.a) * zzNormal.y,2.0) ) )
 
-
 			cxyz1 = MAGIC_FUNCTION;
-
+			//gl_FragColor = vec4( zzNormal, 1.0 );
+			gl_FragColor = vec4( cxyz1.rgb, 1.0 );
+return;
 			if( type2 > 0.0 && type1 > 0.0 ) {
 				// if both are not void, then compute the other point, and the delta to the other texture
 				index = type1;
