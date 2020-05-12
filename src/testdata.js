@@ -74,6 +74,14 @@ function createTestData() {
 		});
 	}
 
+	result['Asteroid'] = makeVolume(
+		[[-1, 1, 0.08],
+		 [-1, 1, 0.08],
+		 [-1, 1, 0.08]],
+		function(x,y,z) {
+			return (x*x + y*y + z*z) - PerlinNoise.noise(x*2,y*2,z*2);
+		}
+	);
 
 	result['dot'] = makeVolume(
 		[[0, 0, 0.5],
@@ -187,14 +195,6 @@ function createTestData() {
 		}
 	);
 		
-	result['Asteroid'] = makeVolume(
-		[[-1, 1, 0.08],
-		 [-1, 1, 0.08],
-		 [-1, 1, 0.08]],
-		function(x,y,z) {
-			return (x*x + y*y + z*z) - PerlinNoise.noise(x*2,y*2,z*2);
-		}
-	);
 	var pos = 0;
 	result['Terrain 2'] = makeVolume(
 		[[-1, 1, 0.05],

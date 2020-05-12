@@ -354,16 +354,7 @@ const tetCentroidFacet =[
 			  , [ [2,3,0,1],[2,3,0,1],[3,2,0,1],[3,0,2,1],[3,0,2,1],[3,2,0,1]]
 			  , [ [3,2,1,0],[3,2,1,0],[3,2,0,1],[2,0,3,1],[2,0,3,1],[1,3,2,0]]
 			  , [ [2,3,0,1],[2,3,0,1],[3,2,0,1],[2,0,3,1],[1,2,0,3],[3,2,0,1]]
-			  ],
-			 [  [ [2,1,0,3],[1,0,3,2],[0,2,3,1],[0,2,1,3],[0,2,1,3],[0,2,3,1]]  /* a few missing checks */
-			  , [ [1,0,2,3],[1,0,2,3],[1,0,2,3],[0,2,1,3],[0,2,1,3],[1,0,2,3]]
-			  , [ [1,0,3,2],[1,0,3,2],[3,1,0,2],[1,0,3,2],[1,0,3,2],[1,0,2,3]]
-			  , [ [2,3,1,0],[0,2,3,1],[2,3,1,0],[2,3,1,0],[0,2,3,1],[2,3,1,0]]
-			  , [ [0,3,2,1],[0,3,2,1],[3,0,2,1],[3,0,2,1],[3,0,2,1],[3,0,2,1]]
-			  , [ [3,0,2,1],[3,0,2,1],[3,0,2,1],[3,0,2,1],[3,0,2,1],[3,0,2,1]]
-			  , [ [3,2,1,0],[3,2,1,0],[0,3,2,1],[3,2,1,0],[3,2,1,0],[0,3,2,1]]
-			  , [ [0,2,3,1],[0,2,3,1],[0,2,3,1],[0,2,3,1],[0,2,3,1],[0,2,3,1]]
-			  ],
+			  ]
 			],
 		  [ 
 			[ [ [2,3,0,1],[3,0,1,2],[0,2,3,1],[2,0,3,1],[0,3,1,2],[0,2,3,1]]  /* unchecked! */
@@ -374,15 +365,6 @@ const tetCentroidFacet =[
 			, [ [1,0,3,2],[1,0,3,2],[3,2,0,1],[2,0,3,1],[2,0,3,1],[0,1,3,2]]
 			, [ [1,2,3,0],[1,2,3,0],[3,2,0,1],[3,0,2,1],[2,1,3,0],[3,2,0,1]]
 			, [ [1,0,3,2],[1,0,3,2],[3,2,0,1],[1,3,0,2],[0,2,1,3],[2,0,1,3]]
-			],
-		   [  [ [2,1,0,3],[1,0,3,2],[0,2,3,1],[1,2,0,3],[1,2,0,3],[0,2,3,1]]  /* a few missing checks */
-			, [ [2,1,0,3],[2,1,0,3],[1,0,2,3],[3,1,2,0],[1,2,0,3],[1,0,2,3]]
-			, [ [1,0,3,2],[1,0,3,2],[1,0,2,3],[1,0,3,2],[1,0,3,2],[1,0,2,3]]
-			, [ [2,1,0,3],[0,3,2,1],[2,3,1,0],[2,3,1,0],[0,2,3,1],[2,3,1,0]]
-			, [ [3,0,2,1],[3,0,2,1],[3,0,2,1],[2,0,3,1],[2,0,3,1],[3,0,2,1]]
-			, [ [0,3,2,1],[0,3,2,1],[3,0,2,1],[2,0,3,1],[2,0,3,1],[3,0,2,1]]
-			, [ [3,2,1,0],[3,2,1,0],[0,3,2,1],[3,2,1,0],[3,2,1,0],[0,3,2,1]]
-			, [ [0,3,2,1],[0,3,2,1],[0,2,3,1],[0,3,2,1],[0,2,3,1],[0,2,3,1]]
 			],
 		  ],
 		 ];
@@ -401,7 +383,8 @@ const tetCentroidFacet =[
 	var vertices = opts.vertices || []
 	, normalVertices = opts.normalVertices || null
 	, normalColors = opts.normalColors || null
-	, faces = opts.faces || [];
+	, faces = opts.faces || []
+	, faceNormals  = []
 	var smoothShade = opts.smoothShade || false;
 	var newData = [];
 	const showGrid = opts.showGrid;
@@ -545,7 +528,7 @@ function measureTriFace( p1,p2,p3){
 }
 
 
-function TetVert( p, n, p1, p2, p3, types, deltas ) {
+function TetVert( p, n, p1, p2, p3, tv ) {
 	const del1 = [p2.normalBuffer[0]-p1.normalBuffer[0],p2.normalBuffer[1]-p1.normalBuffer[1],p2.normalBuffer[2]-p1.normalBuffer[2] ];
 	const del2 = [p3.normalBuffer[0]-p2.normalBuffer[0],p3.normalBuffer[1]-p2.normalBuffer[1],p3.normalBuffer[2]-p2.normalBuffer[2] ];
 	const del3 = [p1.normalBuffer[0]-p3.normalBuffer[0],p1.normalBuffer[1]-p3.normalBuffer[1],p1.normalBuffer[2]-p3.normalBuffer[2] ];
@@ -557,6 +540,38 @@ function TetVert( p, n, p1, p2, p3, types, deltas ) {
 	//var l2 = Math.sqrt( del2[0]*del2[0]+del2[1]*del2[1] +del2[2]*del2[2] );
 	//var l3 = Math.sqrt( del3[0]*del3[0]+del3[1]*del3[1] +del3[2]*del3[2] );
 	var l = l1+l2+l3;
+
+	function updateTV() {
+		tv.p[0] = (tv.p[0]+p[0])/2;
+		tv.p[1] = (tv.p[1]+p[1])/2;
+		tv.p[2] = (tv.p[2]+p[2])/2;
+		tv.n[0] = (tv.n[0]+n[0])/2;
+		tv.n[1] = (tv.n[1]+n[1])/2;
+		tv.n[2] = (tv.n[2]+n[2])/2;
+		const nlen = 1/Math.sqrt(tv.n[0]*tv.n[0]+tv.n[1]*tv.n[1]+tv.n[2]*tv.n[2] );
+		tv.n[0] *= nlen;
+		tv.n[1] *= nlen;
+		tv.n[2] *= nlen;
+		if( p1 !== tv.sources[0] && p1 !== tv.sources[1] && p1 !== tv.sources[0]  ){
+			tv.sources[3] = p1;
+			tv.elements[6] = p1.type1;
+			tv.elements[7] = p1.type2;
+			tv.eleDels[3] = p1.typeDelta;
+		}
+		else if( p2 !== tv.sources[0] && p2 !== tv.sources[1] && p2 !== tv.sources[0]  ){
+			tv.sources[3] = p2;
+			tv.elements[6] = p2.type1;
+			tv.elements[7] = p2.type2;
+			tv.eleDels[3] = p2.typeDelta;
+		}
+		else if( p3 !== tv.sources[0] && p3 !== tv.sources[1] && p3 !== tv.sources[0]  ) {
+			tv.sources[3] = p3;
+			tv.elements[6] = p3.type1;
+			tv.elements[7] = p3.type2;
+			tv.eleDels[3] = p3.typeDelta;
+		}
+		return tv;
+	}
 
 	// bigger than the grey circle; which puts them all co-linear.
 	if( l > 0.1 ) {
@@ -575,7 +590,10 @@ function TetVert( p, n, p1, p2, p3, types, deltas ) {
 			n[0] = p1.normalBuffer[0];
 			n[1] = p1.normalBuffer[1];
 			n[2] = p1.normalBuffer[2];
-			
+
+			if( tv ) return updateTV();
+			return { id:0,p:p,n:n,sources:[p1, p2, p3, null], elements:[p1.type1,p1.type2,p2.type1,p2.type2,p3.type1,p3.type2,0,0], eleDels:[ p1.typeDelta, p2.typeDelta,p3.typeDelta,0 ] };
+
 		}else {
 			// intersection of planes with normals specified should result in 2 point...
 			// no matter which point we choose; but we choose to calculate using the
@@ -639,6 +657,22 @@ function TetVert( p, n, p1, p2, p3, types, deltas ) {
 			n[0] *= nLen;
 			n[1] *= nLen;
 			n[2] *= nLen;
+
+			if( tv ){
+				tv.p[0] = (tv.p[0]+p[0])/2;
+				tv.p[1] = (tv.p[1]+p[1])/2;
+				tv.p[2] = (tv.p[2]+p[2])/2;
+				tv.n[0] = (tv.n[0]+n[0])/2;
+				tv.n[1] = (tv.n[1]+n[1])/2;
+				tv.n[2] = (tv.n[2]+n[2])/2;
+				const nlen = 1/Math.sqrt(tv.n[0]*tv.n[0]+tv.n[1]*tv.n[1]+tv.n[2]*tv.n[2] );
+				tv.n[0] *= nlen;
+				tv.n[1] *= nlen;
+				tv.n[2] *= nlen;
+				return tv;
+			}
+			if( tv ) return updateTV();
+			return { id:0,p:p,n:n,sources:[p1, p2,p3], elements:[p1.type1,p1.type2,p2.type1,p2.type2,p3.type1,p3.type2], eleDels:[ p1.typeDelta, p2.typeDelta,p3.typeDelta ] };
 			
 		}
 	}else {
@@ -655,6 +689,10 @@ function TetVert( p, n, p1, p2, p3, types, deltas ) {
 		n[0] *= nLen;
 		n[1] *= nLen;
 		n[2] *= nLen;
+
+		if( tv ) return updateTV();
+		return { id:0,p:p,n:n,sources:[p1, p2,p3], elements:[p1.type1,p1.type2,p2.type1,p2.type2,p3.type1,p3.type2], eleDels:[ p1.typeDelta, p2.typeDelta,p3.typeDelta ] };
+
 	}
 
 }
@@ -1137,9 +1175,9 @@ function meshCloud(data, dims) {
 								}else {
 									// basically never happens given the initial triangle characterization.
 									//console.log( "1Still not happy...", fnorm, ds,vA, vB, vC );
-									continue;
+									//continue;
 									// this is a sliver tri-face; really want to disregard this one.
-									if( normalVertices ) {
+									if( 0 && normalVertices ) {
 										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
 										normalVertices.push( new THREE.Vector3( v2[0],v2[1],v2[2] ))
 										normalVertices.push( new THREE.Vector3( v2[0],v2[1],v2[2] ))
@@ -1156,8 +1194,8 @@ function meshCloud(data, dims) {
 
 										normalVertices.push( new THREE.Vector3( v1[0],v1[1],v1[2] ))
 										normalVertices.push( new THREE.Vector3( v1[0] - fnorm[0]/2,v1[1] - fnorm[1]/2,v1[2] - fnorm[2]/2 ));
-										normalColors.push( new THREE.Color( 255,255,255,255 ))
-										normalColors.push( new THREE.Color( 255,255,255,255 ))
+										normalColors.push( new THREE.Color( 1,1,1,255 ))
+										normalColors.push( new THREE.Color( 1,1,1,255 ))
 									};
 
 
@@ -1346,7 +1384,7 @@ function meshCloud(data, dims) {
 		
 							//console.log( "vertices", tet, useFace, tri, "odd:",odd, "invert:", invert, "pos:", x, y, z, "dels:", pointStateHolder[ai].typeDelta, pointStateHolder[bi].typeDelta, pointStateHolder[ci].typeDelta, "a:", pointStateHolder[ai].invert, pointStateHolder[ai].type1, pointStateHolder[ai].type2, "b:", pointStateHolder[bi].invert, pointStateHolder[bi].type1, pointStateHolder[bi].type2, "c:", pointStateHolder[ci].invert, pointStateHolder[ci].type1, pointStateHolder[ci].type2 );
 							const p = [0,0,0], n = [0,0,0];
-							TetVert( p, n, psh1=pointStateHolder[ai], psh2=pointStateHolder[bi], psh3=pointStateHolder[ci] );
+							const tv = TetVert( p, n, psh1=pointStateHolder[ai], psh2=pointStateHolder[bi], psh3=pointStateHolder[ci] );
 if(0) {
 							normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
 							normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
@@ -1362,7 +1400,11 @@ if(0) {
 							normalColors.push( new THREE.Color( 255,255,255,255 ))
 							normalColors.push( new THREE.Color( 255,255,255,255 ))
 }
-							normals[normOffset+tet] = {id:0,p:p,n:n,sources:[psh1, psh2,psh3], i:invert};
+							const nlen = 1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2] );
+							n[0] *= nlen;
+							n[1] *= nlen;
+							n[2] *= nlen;
+							normals[normOffset+tet] = tv;//{id:0,p:p,n:n,sources:[psh1, psh2,psh3], i:invert};
 							//console.log( "Setting normal:", x, y, z, dataOffset, normOffset, tet, bits[dataOffset] );
 				                }else {
 							const ai = points[baseOffset+fpi[0][0]];
@@ -1373,7 +1415,7 @@ if(0) {
 							//console.log( "vertices", tet, useFace, tri, "odd:",odd, "invert:", invert, "pos:", x, y, z, "dels:", pointStateHolder[ai].typeDelta, pointStateHolder[bi].typeDelta, pointStateHolder[ci].typeDelta, "a:", pointStateHolder[ai].invert, pointStateHolder[ai].type1, pointStateHolder[ai].type2, "b:", pointStateHolder[bi].invert, pointStateHolder[bi].type1, pointStateHolder[bi].type2, "c:", pointStateHolder[ci].invert, pointStateHolder[ci].type1, pointStateHolder[ci].type2 );
 							const p = [0,0,0], n = [0,0,0];
 
-								TetVert( p, n, psh1 = pointStateHolder[ai], psh2 = pointStateHolder[bi], psh3= pointStateHolder[ci], invert );
+							const tv = TetVert( p, n, psh1 = pointStateHolder[ai], psh2 = pointStateHolder[bi], psh3= pointStateHolder[ci] );
 								if(0){
 									normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
 								normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
@@ -1396,7 +1438,9 @@ if(0) {
 		
 							//console.log( "vertices", tet, useFace, tri, "odd:",odd, "invert:", invert, "pos:", x, y, z, "dels:", pointStateHolder[ai].typeDelta, pointStateHolder[bi].typeDelta, pointStateHolder[ci].typeDelta, "a:", pointStateHolder[ai].invert, pointStateHolder[ai].type1, pointStateHolder[ai].type2, "b:", pointStateHolder[bi].invert, pointStateHolder[bi].type1, pointStateHolder[bi].type2, "c:", pointStateHolder[ci].invert, pointStateHolder[ci].type1, pointStateHolder[ci].type2 );
 							const p2 = [0,0,0], n2 = [0,0,0];
-							TetVert( p2, n2, psh1 = pointStateHolder[ai2], psh2 = pointStateHolder[bi2], psh3 = pointStateHolder[ci2] );
+							// tv2 should be tv with updated p
+							// (what about elements? there's really 4!)
+							const tv2 = TetVert( p2, n2, psh1 = pointStateHolder[ai2], psh2 = pointStateHolder[bi2], psh3 = pointStateHolder[ci2],tv );
 	
 							if(0){
 								normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
@@ -1414,14 +1458,7 @@ if(0) {
 							normalColors.push( new THREE.Color( 255,255,0,255 ))
 							}
 
-							p[0] = (p[0]+p2[0])/2;
-							p[1] = (p[1]+p2[1])/2;
-							p[2] = (p[2]+p2[2])/2;
-	                                        	// these are probably going to be pretty close?
-							n[0] = (n[0]+n2[0])/2;
-							n[1] = (n[1]+n2[1])/2;
-							n[2] = (n[2]+n2[2])/2;
-
+							
 							if(0){
 							normalVertices.push( new THREE.Vector3( p[0],p[1],p[2] ))
 							normalVertices.push( new THREE.Vector3( p[0] + n[0]/2,p[1] + n[1]/2,p[2] + n[2]/2 ));
@@ -1429,7 +1466,7 @@ if(0) {
 							normalColors.push( new THREE.Color( 0,255,255,255 ))
 							}
 							//console.log( "Setting normal:", x, y, z, dataOffset, normOffset, tet, bits[dataOffset] )
-							normals[normOffset+tet] = {id:0,p:p,n:n,sources:[psh1,psh2,psh3], i:invert};
+							normals[normOffset+tet] = tv;//{id:0,p:p,n:n,sources:[psh1,psh2,psh3], i:invert};
 						}
 
 						bits[dataOffset] = 1;
@@ -1495,37 +1532,75 @@ if(0) {
 		}
 	}
 
-	function addFace( ai, bi, ci, n ) {
+	function addFace( ai_, bi_, ci_, n ) {
+		const ai = ai_.id-1;
+		const bi = bi_.id-1;
+		const ci = ci_.id-1;
 		if( !n ){
-			const tmp1 = [vertices[bi].x-vertices[ai].x, vertices[bi].y-vertices[ai].y, vertices[bi].z-vertices[ai].z];
-			const tmp2 = [vertices[ci].x-vertices[ai].x, vertices[ci].y-vertices[ai].y, vertices[ci].z-vertices[ai].z];
-			n = cross( [0,0,0], tmp1, tmp2);
-			const s = -1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
-			n[0] *= s;
-			n[1] *= s;
-			n[2] *= s;
+			if( smoothShade ) {
+				if( opts.geometryHelper )
+					n = [ai_.n,ci_.n,bi_.n];
+				else
+					n = [faceNormals[ai],faceNormals[ci],faceNormals[bi]];// these are three.vectors isntead...
+			}else {
+				const tmp1 = [vertices[bi].x-vertices[ai].x, vertices[bi].y-vertices[ai].y, vertices[bi].z-vertices[ai].z];
+				const tmp2 = [vertices[ci].x-vertices[ai].x, vertices[ci].y-vertices[ai].y, vertices[ci].z-vertices[ai].z];
+				n = cross( [0,0,0], tmp1, tmp2);
+				const s = -1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+				n[0] *= s;
+				n[1] *= s;
+				n[2] *= s;
+				n = new THREE.Vector3(n[0],n[1],n[2]);
+			}
 		}
-		return faces.push( f = new THREE.Face3( ai, ci, bi, new THREE.Vector3(n[0],n[1],n[2]) ) );
+		else if( !opts.geometryHelper ){
+			n = [faceNormals[ai],faceNormals[ci],faceNormals[bi]];// these are three.vectors isntead...
+		}
+		if( opts.geometryHelper )	{
+			return opts.geometryHelper.addFace( ai, ci, bi, n, false	);
+		}
+
+		return faces.push( f = new THREE.Face3( ai, ci, bi, n ) );
 
 	}
-	function addPoint( p ) {
-		if( !p.id )
-			p.id = (vertices.push(new THREE.Vector3( p.p[0],  p.p[1], p.p[2] )),vertices.length-1)+1;
-
-		return p.id - 1;
-
-		return opts.geometryHelper.addPoint( p.p
-			 , null, null // texture, and uv[1,0] 
-			 , [0xA0,0x00,0xA0,255] // edge color
-			 , [0x11, 0x11, 0x11, 255] // face color
-			 , [0,0,0] // normal *needs to be updated*;
-			 , 100 // pow
-			 , false // use texture
-			 , false // flat
-			 , false // decal texture?
-			 , p.p  // modulous of this point.
-			 , elements.data[data1], elements.data[data0], t, true
-		);
+	var outX, outY, outZ;
+	function addPoint( p, n ) {
+		if( opts.geometryHelper ) {
+			normal = opts.geometryHelper.addPoint( p.p
+					, null, null // texture, and uv[1,0] 
+					, [0xA0,0x00,0xA0,255] // edge color
+					, [0x11, 0x11, 0x11, 255] // face color
+					, [0,0,0] // normal *needs to be updated*;
+					, 100 // pow
+					, false // use texture
+					, false // flat
+					, false // decal texture?
+					, [outX,outY,outZ]  // unit modulous of this point.
+					, false
+			);
+			faceNormals.push( p.n );
+			p.id = normal.id+1;
+			return p;
+		}else {
+			if( smoothShade ) {
+				if( !p.id ) {
+					p.id = (vertices.push(new THREE.Vector3( p.p[0],  p.p[1], p.p[2] )),vertices.length-1)+1;
+					if( n )
+						faceNormals.push( new THREE.Vector3( n[0], n[1], n[2] ) );
+					else
+						faceNormals.push( new THREE.Vector3( p.n[0], p.n[1], p.n[2] ) );
+				}
+				return p;//p.id - 1;
+			}else {
+				let newId = (vertices.push(new THREE.Vector3( p.p[0],  p.p[1], p.p[2] )),vertices.length-1)+1;
+				if( n )
+					faceNormals.push( new THREE.Vector3( n[0], n[1], n[2] ) );
+				else
+					faceNormals.push( new THREE.Vector3( p.n[0], p.n[1], p.n[2] ) );
+				p.id = newId;  // this will get updated dynamically
+				return p;
+			}
+		}
 	}
 	//https://en.wikipedia.org/wiki/Skew_lines#Nearest_Points
 
@@ -1582,25 +1657,25 @@ if(0) {
 	function outputFace( inv, n1, n2, n3, n4 ){
 		const f = getFold( n1.n, n1.p, n2.p, n3.p, n4.p );
 		if( f >= 0 ) {
-			const p0 = addPoint( n1);
+			const p0 = addPoint( n1 );
 			const p1 = addPoint( n2);
 			const p2 = addPoint( n3);
 			const p3 = addPoint( n4);
 			if( f ) 
 				if( inv ){
-					addFace( p0, p2, p1 );
-					addFace( p0, p3, p2 );
+					addFace( p0, p2, p1, [n1.n,n3.n,n2.n] );
+					addFace( p0, p3, p2, [n1.n,n4.n,n3.n] );
 				}else {
-					addFace( p0, p1, p2 );
-					addFace( p0, p2, p3 );
+					addFace( p0, p1, p2, [n1.n,n2.n,n3.n] );
+					addFace( p0, p2, p3, [n1.n,n3.n,n4.n] );
 				}
 			else
 				if( inv ){
-					addFace( p1, p3, p2 );
-					addFace( p1, p0, p3 );
+					addFace( p1, p3, p2, [n2.n,n4.n,n3.n] );
+					addFace( p1, p0, p3, [n2.n,n1.n,n4.n] );
 				}else {
-					addFace( p1, p2, p3 );
-					addFace( p1, p3, p0 );
+					addFace( p1, p2, p3, [n2.n,n3.n,n4.n] );
+					addFace( p1, p3, p0, [n2.n,n4.n,n1.n] );
 				}
 		}else {
 			let a = measureTriFace( n1.p, n2.p, n3.p );
@@ -1610,9 +1685,9 @@ if(0) {
 				const p2 = addPoint( n2);
 				const p3 = addPoint( n3);
 				if( inv )
-					addFace( p1, p3, p2 );
+					addFace( p1, p3, p2, [n1.n,n3.n,n2.n] );
 				else
-					addFace( p1, p2, p3 );
+					addFace( p1, p2, p3, [n1.n,n2.n,n3.n] );
 			}
 			a = measureTriFace( n1.p, n3.p, n4.p );
 			if( a > 0.1 ){
@@ -1621,9 +1696,9 @@ if(0) {
 				const p2 = addPoint( n3);
 				const p3 = addPoint( n4);
 				if( inv )
-					addFace( p1, p3, p2 );
+					addFace( p1, p3, p2,[n1.n,n3.n,n2.n] );
 				else
-					addFace( p1, p2, p3 );
+					addFace( p1, p2, p3,[n1.n,n2.n,n3.n] );
 			}
 
 		}
@@ -1631,26 +1706,6 @@ if(0) {
 
 	}
 
-
-	if( 0 ) {
-		// draw a 'unit' cube for orientation.
-	var c1 = addPoint( [0,0,0]);
-	var c2 = addPoint( [1,0,0]);
-	var c3 = addPoint( [0,2,0]);
-	var c4 = addPoint( [1,2,0]);
-	var c5 = addPoint( [0,0,4]);
-	var c6 = addPoint( [1,0,4]);
-	var c7 = addPoint( [0,2,4]);
-	var c8 = addPoint( [1,2,4]);
-	addFace( c1, c2, c4 );
-	addFace( c1, c4, c3 );
-
-	addFace( c2, c6, c8 );
-	addFace( c2, c8, c4 );
-
-	addFace( c3, c4, c8 );
-	addFace( c3, c8, c7 );
-	}
 
 	for( var z = 0; z < dim2; z++ ) {
 		//if( z > 3 ) continue;
@@ -1661,13 +1716,13 @@ if(0) {
 		for( var y = 0; y < dim1; y++ ) {
 			//if( y > 3 ) continue;
 			for( var x = 0; x < dim0; x++ ) {
-
+				outX = x; outY = y; outZ = z;
 				const odd = (x+y+z)&1;
 				const offset = (x + (y*dim0) + z*dim0*dim1);
+				//if( !( x > 8 && x < 10 && y > 3 && y < 9 && z > 17 && z < 19 ))
+				//	continue;
 				//console.log( "scanning normal:", x, y, z, bits[offset], offset )
 				if( !bits[offset] ) {
-					// if none of these have any content... 
-					//console.log( "Skipping ", x, y, z, offset )
 					continue
 				}
 				let added = 0;
@@ -1703,12 +1758,13 @@ if(0) {
 									inv = 1;
 									
 							}
-							const p0 = addPoint( normals[baseOffset+4]);
+							
+							const p0 = addPoint( n0 = normals[baseOffset+4]);
 							const p1 = addPoint( n1 = normals[baseOffset+1]);
-							const p2 = addPoint( normals[baseOffset+2]);
-							const p3 = addPoint( normals[baseOffset+3]);
+							const p2 = addPoint( n2 = normals[baseOffset+2]);
+							const p3 = addPoint( n3 = normals[baseOffset+3]);
 							if( inv ){
-								addFace( p0, p1, p2 );
+								addFace( p0, p1, p2,  );
 								addFace( p0, p2, p3 );
 								addFace( p0, p3, p1 );
 		
@@ -1733,10 +1789,10 @@ if(0) {
 									inv = 0;
 							}
 
-							const p0 = addPoint( normals[baseOffset+4]);
+							const p0 = addPoint( n0 = normals[baseOffset+4]);
 							const p1 = addPoint( n1 = normals[baseOffset+1]);
-							const p2 = addPoint( normals[baseOffset+2]);
-							const p3 = addPoint( normals[baseOffset+3]);
+							const p2 = addPoint( n2 = normals[baseOffset+2]);
+							const p3 = addPoint( n3 = normals[baseOffset+3]);
 							if( inv ){
 								addFace( p0, p1, p2 );
 								addFace( p0, p2, p3 );
@@ -1766,10 +1822,10 @@ if(0) {
 									inv = 1;
 							}
 
-							const p0 = addPoint( normals[baseOffset+4]);
-							const p1 = addPoint( normals[baseOffset+0]);
-							const p2 = addPoint( normals[baseOffset+2]);
-							const p3 = addPoint( normals[baseOffset+3]);
+							const p0 = addPoint( n0 = normals[baseOffset+4]);
+							const p1 = addPoint( n1 = normals[baseOffset+0]);
+							const p2 = addPoint( n2 = normals[baseOffset+2]);
+							const p3 = addPoint( n3 = normals[baseOffset+3]);
 							if( inv ) {
 								addFace( p0, p2, p1 );
 								addFace( p0, p3, p2 );
@@ -1795,10 +1851,10 @@ if(0) {
 									break;
 							}
 
-							const p0 = addPoint( normals[baseOffset+4]);
-							const p1 = addPoint( normals[baseOffset+0]);
-							const p2 = addPoint( normals[baseOffset+2]);
-							const p3 = addPoint( normals[baseOffset+3]);
+							const p0 = addPoint( n0 = normals[baseOffset+4]);
+							const p1 = addPoint( n1 = normals[baseOffset+0]);
+							const p2 = addPoint( n2 = normals[baseOffset+2]);
+							const p3 = addPoint( n3 = normals[baseOffset+3]);
 							if( inv ) {
 								addFace( p0, p2, p1 );
 								addFace( p0, p3, p2 );
@@ -1827,10 +1883,10 @@ if(0) {
 								default:
 									inv = !inv;
 							}							
-							const p0 = addPoint( normals[baseOffset+4]);
-							const p1 = addPoint( normals[baseOffset+0]);
+							const p0 = addPoint( n0 = normals[baseOffset+4]);
+							const p1 = addPoint( n1 = normals[baseOffset+0]);
 							const p2 = addPoint( n2 = normals[baseOffset+1]);
-							const p3 = addPoint( normals[baseOffset+3]);
+							const p3 = addPoint( n3 = normals[baseOffset+3]);
 							if( inv ) {
 								addFace( p0, p2, p1 );
 								addFace( p0, p3, p2 );
@@ -1945,9 +2001,35 @@ if(0) {
 							const p1 = addPoint( n1=normals[baseOffset+(i1=tetCentroidFacet[odd][inv][normDir.dir][l][0])]);
 							const p2 = addPoint( n2=normals[baseOffset+(i2=tetCentroidFacet[odd][inv][normDir.dir][l][1])]);
 							const p3 = addPoint( n3=normals[baseOffset+(i3=tetCentroidFacet[odd][inv][normDir.dir][l][2])]);
-							const p4 = addPoint( normals[baseOffset+(i4=tetCentroidFacet[odd][inv][normDir.dir][l][3])]);
+							const p4 = addPoint( n4=normals[baseOffset+(i4=tetCentroidFacet[odd][inv][normDir.dir][l][3])]);
 
 							usedTets[odd][inv][normDir.dir][l] = 1;
+
+							//if( normDir.dir !== 3/* || l !== 4*/) continue;
+							//console.log( "emit:", odd, inv, normDir.dir, l )
+							if(0) {
+							normalVertices.push( new THREE.Vector3( n0.p[0],n0.p[1],n0.p[2] ))
+							normalVertices.push( new THREE.Vector3( n0.p[0] + n0.n[0]/2,n0.p[1] + n0.n[1]/2,n0.p[2] + n0.n[2]/2 ));
+							normalColors.push( new THREE.Color( 0.5,0.5,0.5,255 ))
+							normalColors.push( new THREE.Color( 0.5,0.5,0.5,255 ))
+
+								normalVertices.push( new THREE.Vector3( n1.p[0],n1.p[1],n1.p[2] ))
+								normalVertices.push( new THREE.Vector3( n1.p[0] + n1.n[0]/2,n1.p[1] + n1.n[1]/2,n1.p[2] + n1.n[2]/2 ));
+								normalColors.push( new THREE.Color( 0.5,0,0,255 ))
+								normalColors.push( new THREE.Color( 0.5,0,0,255 ))
+								normalVertices.push( new THREE.Vector3( n2.p[0],n2.p[1],n2.p[2] ))
+								normalVertices.push( new THREE.Vector3( n2.p[0] + n2.n[0]/2,n2.p[1] + n2.n[1]/2,n2.p[2] + n2.n[2]/2 ));
+								normalColors.push( new THREE.Color( 0,0.5,0,255 ))
+								normalColors.push( new THREE.Color( 0,0.5,0,255 ))
+								normalVertices.push( new THREE.Vector3( n3.p[0],n3.p[1],n3.p[2] ))
+								normalVertices.push( new THREE.Vector3( n3.p[0] + n3.n[0]/2,n3.p[1] + n3.n[1]/2,n3.p[2] + n3.n[2]/2 ));
+								normalColors.push( new THREE.Color( 0,0,0.5,255 ))
+								normalColors.push( new THREE.Color( 0,0,0.5,255 ))
+								normalVertices.push( new THREE.Vector3( n4.p[0],n4.p[1],n4.p[2] ))
+								normalVertices.push( new THREE.Vector3( n4.p[0] + n4.n[0]/2,n4.p[1] + n4.n[1]/2,n4.p[2] + n4.n[2]/2 ));
+								normalColors.push( new THREE.Color( 0,0.5,0.5,255 ))
+								normalColors.push( new THREE.Color( 0,0.5,0.5,255 ))
+							}
 
 							addFace( p0, p1, p2 );
 							addFace( p0, p2, p3 );
@@ -2508,8 +2590,8 @@ if(0) {
 
 
 	// update geometry (could wait for index.html to do this?
-	//if( showGrid )
-	//	opts.geometryHelper.markDirty();
+	if( showGrid )
+		opts.geometryHelper.markDirty();
 	//console.log( "These got used so far:", usedTets);
 
 	opts.points  = points;   

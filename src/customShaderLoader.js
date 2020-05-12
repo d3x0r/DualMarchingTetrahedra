@@ -9,6 +9,9 @@ import {TextureStack} from "./textureStack.canvas.js"
 import {GeometryBuffer} from "./geometrybuffer.js"
 import {GeometryMaterial} from "./geometrymaterial.texture.js"
 
+import {DualGeometryBuffer} from "./dual.geometrybuffer.js"
+import {DualGeometryMaterial} from "./dual.geometrymaterial.texture.js"
+
 
 const common = {
 	stack : null,
@@ -34,7 +37,9 @@ TextureDone( ()=>{
 })
 
 import {createTestData} from "./testdata.js"
+import {createTestElementData} from "./testelement.js"
 
+window.createTestElementData = createTestElementData;
 window.createTestData = createTestData;
 
 export {TextureStack,common }

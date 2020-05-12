@@ -1,3 +1,5 @@
+import "./three.js/three.min.js";
+
 function createTestElementData() {
 	var result = {};
 	
@@ -18,7 +20,7 @@ function createTestElementData() {
 			//	res[i] = 2 + Math.ceil((dims[i][1] - dims[i][0]) / dims[i][2]);
 			//}
 
-			var volume = new Float32Array((res[0]) * (res[1]) * (res[2]))
+			var volume = new Int32Array((res[0]) * (res[1]) * (res[2]))
 				, n = 0;
 
 			
@@ -52,8 +54,42 @@ function createTestElementData() {
 						volume[n] = 1 + (7 * Math.random())|0;
 			}
 
-			return {data: volume, dims:res};
+			return {texture:makeElementImage( volume, res ), data: volume, dims:res};
 		});
+	}
+
+	function makeElementImage( volume, res ) {
+		var canvas = document.createElement( "canvas" );
+		var ctx = canvas.getContext( "2d" );
+		const halfZ = Math.ceil(Math.sqrt(res[2]));
+		const w = ( canvas.width = res[0]*halfZ );
+		canvas.height = res[1]*halfZ;
+		var _output = ctx.getImageData(0, 0, res[0]*halfZ , res[1]*halfZ );
+		var output = _output.data;
+		for( var z = 0; z < res[2]; z++ ){
+			const halfx = ( (z % halfZ) )* res[0];
+			const halfy = ( (z / halfZ)|0 ) * res[1];
+			for( var y = 0; y < res[1]; y++ )
+				for( var x = 0; x < res[0]; x++ ){
+					const tilex = halfx + x;
+					const tiley = halfy + y;
+					output[(tiley * w + tilex)*4 + 0 ] = ( volume[ x + y*res[0] + z*res[0]*res[1] ]      ) % 256;
+					output[(tiley * w + tilex)*4 + 1 ] = ( volume[ x + y*res[0] + z*res[0]*res[1] ] >> 8 ) % 256;
+					output[(tiley * w + tilex)*4 + 2 ] = ( volume[ x + y*res[0] + z*res[0]*res[1] ] >> 16 ) % 256;
+					output[(tiley * w + tilex)*4 + 3 ] = 255;
+				}
+			}
+		document.body.appendChild( canvas );
+		document.body.style.overflow="";
+		ctx.putImageData(_output, 0,0);
+
+		const texture = new THREE.Texture(canvas);
+		texture.minFilter = THREE.NearestFilter;
+		texture.magFilter = THREE.NearestFilter;
+		texture.needsUpdate = true;
+
+		return { texture:texture, canvas:canvas, halfZ: halfZ };
+
 	}
 
 	result['Sphere'] = makeVolume(
@@ -305,3 +341,5 @@ function createTestElementData() {
 	
 	return result;
 }
+
+export {createTestElementData};

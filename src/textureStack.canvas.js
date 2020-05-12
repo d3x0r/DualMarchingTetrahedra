@@ -49,7 +49,8 @@ function TextureStack() {
     x_ofs : 0,
     y_ofs : 0,
 	smudge() {
-		//DataTexture3D
+		//DataTexture3D DataTexture2DArray
+		//console.log( "Smudge texture... make new array",  texture_width, texture_height, textures);
 		texture3d = new THREE.DataTexture3D( rawData, texture_width, texture_height, textures );
 		texture3d.wrapR  = THREE.RepeatWrapping;
 		texture3d.wrapS = THREE.RepeatWrapping;
