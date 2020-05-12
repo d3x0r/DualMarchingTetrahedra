@@ -26,8 +26,6 @@
 	<script src="./src/surfacenets.js"></script>
 
 	<script src="./src/perlinnoise.js"></script>
-	<script type="module" src="./src/testdata.js"></script>
-	<script src="./src/testelement.js"></script>
 
 		<link href="./src/main.css" rel="stylesheet">
 	</head>
@@ -75,7 +73,7 @@
 		var camera, cameraControl;
 		var geometry, geometryNormals, surfacemesh, wiremesh, lineSegments
 		var meshers = {
-		    'Dual Marching Tetrahdra (DCL-volume)' : DualMarchingTetrahedra3
+		    'Dual Marching Tetrahedra (DCL-volume)' : DualMarchingTetrahedra3
 		  , 'Marching Tetraheda 4 (DCL-volume)' : MarchingTetrahedra4
 		  , 'Marching Tetraheda 3 (DCL-plane)' : MarchingTetrahedra3
 		//  , 'Marching Tetraheda 2 (DCL-cell)' : MarchingTetrahedra2
@@ -93,10 +91,24 @@
 		  scene.remove( wiremesh );
 		  scene.remove( lineSegments );
 
-	  //Create surface mesh
+
+		  var mesher = meshers[ document.getElementById("mesher").value ]
+		var field  = testdata[ document.getElementById("datasource").value ]( document.getElementById("fillOutside").checked?-1
+			          :document.getElementById("fillInside").checked?1
+			          :0
+			 )
+
+			 var geometryHelper ;
+			 	  //Create surface mesh
 			if( document.getElementById( "showGrid").checked) {
-				var geometryHelper = THREE.GridGeometryBuffer();
-				geometry = geometryHelper.geometry;
+				if( mesher === meshers['Dual Marching Tetrahedra (DCL-volume)'] ){
+					geometryHelper = THREE.DualGridGeometryBuffer();
+					geometry = geometryHelper.geometry;
+
+				}else {
+					geometryHelper = THREE.GridGeometryBuffer();
+					geometry = geometryHelper.geometry;
+				}
 			}else {
 				geometry	= new THREE.Geometry();
 				geometry.vertices.length = 0;
@@ -106,12 +118,6 @@
 				geometryNormals.faces.length = 0;
 				geometryNormals.colors.length = 0;
 			}
-
-		  var mesher = meshers[ document.getElementById("mesher").value ]
-		var field  = testdata[ document.getElementById("datasource").value ]( document.getElementById("fillOutside").checked?-1
-			          :document.getElementById("fillInside").checked?1
-			          :0
-			 )
 
 		var fieldElements  = testelements[ document.getElementById("datasource").value ]( field, document.getElementById("fillOutside").checked?-1
 			          :document.getElementById("fillInside").checked?1
@@ -328,13 +334,28 @@
 		else {
 			if( document.getElementById("showGrid").checked )
 			{
-				material	= THREE.GridGeometryMaterial();
-				material.uniforms.textureMap3.value = window.ttCommon.stack.smudge();
-				material.uniforms.cursorIconTex.value = window.ttCommon.cursorIcon;
-				material.defines.CALCULATE_COSINE_MERGE = document.getElementById( "sharpenTransition" ).checked?1:0;
-          			material.uniforms.cursorIconUp.value.set( 0, 0, 1 ); // this should update to the camera up 
+				if( mesher === meshers['Dual Marching Tetrahedra (DCL-volume)'] ){
+					material	= THREE.DualGridGeometryMaterial();
+					material.uniforms.textureMap3.value = window.ttCommon.stack.smudge();
+					material.uniforms.elementMap3.value = fieldElements.texture.texture;
+					material.uniforms.elementX.value = fieldElements.dims[0];
+					material.uniforms.elementY.value = fieldElements.dims[1];
+					material.uniforms.elementZ.value = fieldElements.texture.halfZ;
+					material.uniforms.cursorIconTex.value = window.ttCommon.cursorIcon;
 
-				surfacemesh	= new THREE.Mesh( geometry, material );
+					material.defines.CALCULATE_COSINE_MERGE = document.getElementById( "sharpenTransition" ).checked?1:0;
+					material.uniforms.cursorIconUp.value.set( 0, 1, 0 ); // this should update to the camera up 
+
+					surfacemesh	= new THREE.Mesh( geometry, material );
+				}else{
+					material	= THREE.GridGeometryMaterial();
+					material.uniforms.textureMap3.value = window.ttCommon.stack.smudge();
+					material.uniforms.cursorIconTex.value = window.ttCommon.cursorIcon;
+					material.defines.CALCULATE_COSINE_MERGE = document.getElementById( "sharpenTransition" ).checked?1:0;
+					material.uniforms.cursorIconUp.value.set( 0, 0, 1 ); // this should update to the camera up 
+
+					surfacemesh	= new THREE.Mesh( geometry, material );
+				}
 				//cluster.THREE_solid.add( sector.THREE_solid = new THREE.Mesh( sector.solid_geometry.geometry, geometryShader ) );
 			}else {
 				material	= new THREE.MeshPhongMaterial({
@@ -530,7 +551,7 @@
 
 			//Initialize dom elements
 			testdata = window.createTestData(0);
-			testelements = createTestElementData();
+			testelements = window.createTestElementData();
 			var ds = document.getElementById("datasource");
 			for(var id in testdata) {
 			  ds.add(new Option(id, id), null);
