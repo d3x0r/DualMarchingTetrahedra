@@ -79,8 +79,8 @@ function createTestElementData() {
 					output[(tiley * w + tilex)*4 + 3 ] = 255;
 				}
 			}
-		document.body.appendChild( canvas );
-		document.body.style.overflow="";
+		//document.body.appendChild( canvas );
+		//document.body.style.overflow="";
 		ctx.putImageData(_output, 0,0);
 
 		const texture = new THREE.Texture(canvas);
