@@ -47,7 +47,7 @@
 		<p>Algorithm:</p>
 		<p><select id="mesher"></select></p>
 		<p>Show facets: <input type="checkbox" id="showfacets" value="checked"></p>
-		<p>Show edges: <input type="checkbox" id="showedges" value="checked"></p>
+		<p>Show edges: <input type="checkbox" id="showedges" value="checked"> Show normals: <input type="checkbox" id="showNormals" value="checked"></p>
 		<p>Smooth Shade: <input type="checkbox" id="smoothShade" value="checked">
 		 - Show Grid: <input type="checkbox" id="showGrid" value="0">
 		 - Sharpen Transition: <input type="checkbox" id="sharpenTransition" value="checked">
@@ -113,11 +113,14 @@
 				geometry	= new THREE.Geometry();
 				geometry.vertices.length = 0;
 				geometry.faces.length = 0;
-				geometryNormals	= new THREE.Geometry();
-				geometryNormals.vertices.length = 0;
-				geometryNormals.faces.length = 0;
-				geometryNormals.colors.length = 0;
+
 			}
+			if( document.getElementById("showNormals").checked ) {
+					geometryNormals	= new THREE.Geometry();
+					geometryNormals.vertices.length = 0;
+					geometryNormals.faces.length = 0;
+					geometryNormals.colors.length = 0;
+			}else geometryNormals = null;
 
 		var fieldElements  = testelements[ document.getElementById("datasource").value ]( field, document.getElementById("fillOutside").checked?-1
 			          :document.getElementById("fillInside").checked?1
@@ -326,7 +329,7 @@
 
 	  geometry.computeBoundingBox();
 	  geometry.computeBoundingSphere();
-	if( document.getElementById( "showNormal" ).checked && !document.getElementById("showGrid").checked ) {
+		if( document.getElementById( "showNormal" ).checked && !document.getElementById("showGrid").checked ) {
 			material	= new THREE.MeshNormalMaterial();
 			surfacemesh	= new THREE.Mesh( geometry, material );
 			surfacemesh.doubleSided = true;
@@ -372,13 +375,14 @@
 		wiremesh = new THREE.Mesh(geometry, wirematerial);
 		wiremesh.doubleSided = true;
 
-		var linematerial = new THREE.LineBasicMaterial({
+		if( geometryNormals ) {
+			var linematerial = new THREE.LineBasicMaterial({
 				color : 0xffffff
 			  , vertexColors: THREE.VertexColors
 			});
-
-		lineSegments = new THREE.LineSegments( geometryNormals, linematerial );
-		scene.add( lineSegments );
+			lineSegments = new THREE.LineSegments( geometryNormals, linematerial );
+			scene.add( lineSegments );
+		}
 
 		scene.add( surfacemesh );
 		scene.add( wiremesh );
@@ -387,9 +391,11 @@
 			wiremesh.position.x = surfacemesh.position.x = -(bb.max.x + bb.min.x) / 2.0;
 			wiremesh.position.y = surfacemesh.position.y = -(bb.max.y + bb.min.y) / 2.0;
 			wiremesh.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
-			lineSegments.position.x = surfacemesh.position.x = -(bb.max.x + bb.min.x) / 2.0;
-			lineSegments.position.y = surfacemesh.position.y = -(bb.max.y + bb.min.y) / 2.0;
-			lineSegments.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
+			if( geometryNormals ) {
+				lineSegments.position.x = surfacemesh.position.x = -(bb.max.x + bb.min.x) / 2.0;
+				lineSegments.position.y = surfacemesh.position.y = -(bb.max.y + bb.min.y) / 2.0;
+				lineSegments.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
+			}
 		}
 	
 		window.doInit = ()=>{
@@ -567,6 +573,9 @@
 			document.getElementById("showedges").checked  = false;
 
 			var is;
+			is = document.getElementById("showNormals");
+			is.onchange = updateMesh;
+			is.checked  = false;
 			is = document.getElementById( "inflation" );
 			is.oninput = updateMesh;
 			is = document.getElementById( "noInflation" );

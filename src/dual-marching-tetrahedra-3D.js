@@ -1385,7 +1385,7 @@ function meshCloud(data, dims) {
 							//console.log( "vertices", tet, useFace, tri, "odd:",odd, "invert:", invert, "pos:", x, y, z, "dels:", pointStateHolder[ai].typeDelta, pointStateHolder[bi].typeDelta, pointStateHolder[ci].typeDelta, "a:", pointStateHolder[ai].invert, pointStateHolder[ai].type1, pointStateHolder[ai].type2, "b:", pointStateHolder[bi].invert, pointStateHolder[bi].type1, pointStateHolder[bi].type2, "c:", pointStateHolder[ci].invert, pointStateHolder[ci].type1, pointStateHolder[ci].type2 );
 							const p = [0,0,0], n = [0,0,0];
 							const tv = TetVert( p, n, psh1=pointStateHolder[ai], psh2=pointStateHolder[bi], psh3=pointStateHolder[ci] );
-if(0) {
+if(normalVertices) {
 							normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
 							normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
 							normalColors.push( new THREE.Color( 255,0,0,255 ))
@@ -1416,7 +1416,7 @@ if(0) {
 							const p = [0,0,0], n = [0,0,0];
 
 							const tv = TetVert( p, n, psh1 = pointStateHolder[ai], psh2 = pointStateHolder[bi], psh3= pointStateHolder[ci] );
-								if(0){
+								if(normalVertices){
 									normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
 								normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
 								normalColors.push( new THREE.Color( 255,255,0,255 ))
@@ -1442,7 +1442,7 @@ if(0) {
 							// (what about elements? there's really 4!)
 							const tv2 = TetVert( p2, n2, psh1 = pointStateHolder[ai2], psh2 = pointStateHolder[bi2], psh3 = pointStateHolder[ci2],tv );
 	
-							if(0){
+							if(normalVertices){
 								normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
 							normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
 							normalColors.push( new THREE.Color( 0,0,255,255 ))

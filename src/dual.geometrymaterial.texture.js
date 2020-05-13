@@ -512,9 +512,8 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 
 			// compute the final composite color into cxzy2 using the barycentric simplex scalar. (always adds to 1)
 			face = ( cxyz1 * 0.5 + cxyz2 * 0.5 + cxyz3 * 0.5 ) ;
-gl_FragColor = face;
-return;
 
+			
                 }
                 //else if( ex_flat_color > 0.5 )
                 //{
@@ -522,7 +521,7 @@ return;
                 //}
                 //else
                 {
-			vec3 gridmod = mod( ex_Modulous, 1.0 ) - 0.5;
+			vec3 gridmod = mod( zzPos*3.0, 1.0 ) - 0.5;
 
                     float g;
                     float h;
@@ -582,32 +581,34 @@ return;
 			//gridmod.x = sqrt(1.0-zzNormal.x*zzNormal.x) * pow( abs( gridmod.x ), ((7.0*depthScalar))*ex_Pow );
 			//gridmod.y = sqrt(1.0-zzNormal.y*zzNormal.y) * pow( abs( gridmod.y ), ((7.0*depthScalar))*ex_Pow );
 			//gridmod.z = sqrt(1.0-zzNormal.z*zzNormal.z) * pow( abs( gridmod.z ), ((7.0*depthScalar))*ex_Pow );
+			float tmp;
+			tmp = 4.0;
+			if( tmp == 0.0 ) 
+				edge.rgb = vec3( 0.0, 0.7, 0.7 );
+			else if( tmp == 1.0 ) 
+				edge.rgb = vec3( 0.0, 0.5, 0.0 );
+			else if( tmp == 2.0 ) 
+				edge.rgb = vec3( 0.0, 0.0, 5.0 );
+			else if( tmp == 3.0 ) 
+				edge.rgb = vec3( 0.5, 0.2, 0.5 );
+			else if( tmp == 4.0 ) 
+				edge.rgb = vec3( 0.5, 0.5, 0.0 );
+			else if( tmp == 5.0 ) 
+				edge.rgb = vec3( 0.0, 0.5, 5.0 );
+			else if( tmp == 6.0 ) 
+				edge.rgb = vec3( 0.5, 0.5, 0.5 );
+
 
  //                   g = min(1.0,gridmod.x+gridmod.y+gridmod.z);
                     h = max((gridmod.x+gridmod.y+gridmod.z)-1.0,0.0)/12.0;
                     white = vec4( vec3(1.0,1.0,1.0) * max(edge.r,max(edge.g,edge.b)), 1.0 );
 
-					float tmp;
-					tmp = 4.0;
-					if( tmp == 0.0 ) 
-						edge.rgb = vec3( 0.0, 0.7, 0.7 );
-					else if( tmp == 1.0 ) 
-						edge.rgb = vec3( 0.0, 0.5, 0.0 );
-					else if( tmp == 2.0 ) 
-						edge.rgb = vec3( 0.0, 0.0, 5.0 );
-					else if( tmp == 3.0 ) 
-						edge.rgb = vec3( 0.5, 0.2, 0.5 );
-					else if( tmp == 4.0 ) 
-						edge.rgb = vec3( 0.5, 0.5, 0.0 );
-					else if( tmp == 5.0 ) 
-						edge.rgb = vec3( 0.0, 0.5, 5.0 );
-					else if( tmp == 6.0 ) 
-						edge.rgb = vec3( 0.5, 0.5, 0.5 );
 			
 	specular = face.rgb;
 	diffuseColor = vec4(vec3(0.0),face.a);
 	//diffuseColor = face;
-	//gl_FragColor = face;
+	//gl_FragColor = vec4(g,h,0.0,1.0);
+	//return;
 
     	#include <logdepthbuf_fragment>
     	#include <map_fragment>
@@ -652,6 +653,7 @@ return;
                          gl_FragColor = vec4( gl_FragColor.a*(1.0-g)*gl_FragColor.rgb + h * ( white.rgb - gl_FragColor.rgb ) + (g* edge.rgb)
 					, (1.0-g)*gl_FragColor.a + (g * edge.a) ) ;
 
+					//return;
 //                         gl_FragColor = vec4( gl_FragColor.a*(1.0-g)*gl_FragColor.rgb 
 						// this is the extra highlight in corners...
 						// + h* ( white.rgb - gl_FragColor.rgb ) 
