@@ -94,6 +94,21 @@ function createTestData() {
 		}
 	);
 
+	result['dots'] = makeVolume(
+		[[-4.0, 4.0, 1],
+		 [-4.0, 4.0, 1],
+		 [-4.0, 6.0, 1]],
+		function(x,y,z) {
+			//console.log( "duh? ", x, y, z );
+			if( ( Math.abs(x) % 2 == 1 )
+			&& ( (z < 0 ) ? ( Math.abs(y) % 2 == 1 ) : ( Math.abs(y) % 2 == 0 ) )
+			&& ( ( Math.abs(x) % 2 == 0 ) ? ( Math.abs(z) % 2 == 1 ) : ( Math.abs(z) % 2 == 1 ) ))
+				return -2.3 * Math.random();
+			else
+				return 2.3 * Math.random();
+		}
+	);
+	
 	result['Big Sphere'] = makeVolume(
 		[[-1.0, 1.0, 0.05],
 		 [-1.0, 1.0, 0.05],
@@ -111,21 +126,15 @@ function createTestData() {
 		}
 	);
 
-	result['dots'] = makeVolume(
-		[[-4.0, 4.0, 1],
-		 [-4.0, 4.0, 1],
-		 [-4.0, 6.0, 1]],
+	result['Torus'] = makeVolume(
+		[[-2.0, 2.0, 0.2],
+		 [-2.0, 2.0, 0.2],
+		 [-1.0, 1.0, 0.2]],
 		function(x,y,z) {
-			//console.log( "duh? ", x, y, z );
-			if( ( Math.abs(x) % 2 == 1 )
-			&& ( (z < 0 ) ? ( Math.abs(y) % 2 == 1 ) : ( Math.abs(y) % 2 == 0 ) )
-			&& ( ( Math.abs(x) % 2 == 0 ) ? ( Math.abs(z) % 2 == 1 ) : ( Math.abs(z) % 2 == 1 ) ))
-				return -2.3 * Math.random();
-			else
-				return 2.3 * Math.random();
+			return Math.pow(1.0 - Math.sqrt(x*x + y*y), 2) + z*z - 0.25;
 		}
 	);
-	
+
 	result['Hyperelliptic'] = makeVolume(
 		[[-1.0, 1.0, 0.05],
 		 [-1.0, 1.0, 0.05],
