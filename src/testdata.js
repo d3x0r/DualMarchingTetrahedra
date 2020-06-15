@@ -74,6 +74,15 @@ function createTestData() {
 		});
 	}
 
+	result['Sphere'] = makeVolume(
+		[[-1.0, 1.0, 0.25],
+		 [-1.0, 1.0, 0.25],
+		 [-1.0, 1.0, 0.25]],
+		function(x,y,z) {
+			return x*x + y*y + z*z - 1.0;
+		}
+	);
+
 	result['Asteroid'] = makeVolume(
 		[[-1, 1, 0.08],
 		 [-1, 1, 0.08],
@@ -113,14 +122,6 @@ function createTestData() {
 		[[-1.0, 1.0, 0.05],
 		 [-1.0, 1.0, 0.05],
 		 [-1.0, 1.0, 0.05]],
-		function(x,y,z) {
-			return x*x + y*y + z*z - 1.0;
-		}
-	);
-	result['Sphere'] = makeVolume(
-		[[-1.0, 1.0, 0.25],
-		 [-1.0, 1.0, 0.25],
-		 [-1.0, 1.0, 0.25]],
 		function(x,y,z) {
 			return x*x + y*y + z*z - 1.0;
 		}

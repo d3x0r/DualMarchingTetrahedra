@@ -351,14 +351,13 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			vec4 v_type2 = texture2D( elementMap3, vec2( eX + (curElementDirs.x * sX), 1.0-eY ) );
 			if(!( v_type1.r > 0.0 || v_type2.r > 0.0 ) ){
 				v_type2 = texture2D( elementMap3, vec2( eX - (curElementDirs.x * sX), 1.0-eY ) );
-				curDeltas.x = 1.0 - curDeltas.x;
-
+				curDeltas.x = 1.5 - curDeltas.x;
 			}
 
 			vec4 v_type3 = texture2D( elementMap3, vec2( eX, 1.0-(eY + (curElementDirs.y * sY)) ) );
 			if( !( v_type1.r > 0.0 || v_type3.r > 0.0 ) ){
 				v_type3 = texture2D( elementMap3, vec2( eX, 1.0-(eY - (curElementDirs.y * sY)) ) );
-				curDeltas.y = 1.0 - curDeltas.y;
+				curDeltas.y = 1.5 - curDeltas.y;
 			}
 
 			float eXz = ( mod((curElementPos.z+curElementDirs.z), elementZ) * elementX + curElementPos.x ) / (elementX*elementZ);
@@ -368,7 +367,7 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 				 eXz = ( mod((curElementPos.z-curElementDirs.z), elementZ) * elementX + curElementPos.x ) / (elementX*elementZ);
 				 eYz = ( floor((curElementPos.z-curElementDirs.z) / elementZ) * elementY + curElementPos.y ) / (elementY*elementZ);
 				v_type4 = texture2D( elementMap3, vec2( eX, 1.0-(eYz) ) );
-				curDeltas.z = 1.0 - curDeltas.z;
+				curDeltas.z = 1.5 - curDeltas.z;
 			}
 
 			float type1;
@@ -395,7 +394,8 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			else
 				type4 = -1.0;
 
-			//gl_FragColor = vec4( curDeltas, 1.0);
+			//gl_FragColor = vec4( (curDeltas-0.5)*2.0, 1.0);
+			//return;
 			//gl_FragColor = vec4( mod(eX*elementZ,1.0), mod(eY*elementZ,1.0), curElementPos.z/(elementZ*elementZ), 1.0 );
 			//return;
 			//gl_FragColor = vec4( mod(eX+(curElementDirs.x/(elementX*elementZ))*elementZ,1.0)*curDeltas.x, mod(eX*elementZ,1.0)*(1.0-curDeltas.x), 0.0, 1.0 );
@@ -418,36 +418,39 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			else // type 2 will not be void if 1 is void; use this.
 				index = type2;
 
-				vec4 cxyz1, cxyz2, cxyz3; // texels at this point that are scaled by simplex
-				const vec3 vec_2 = vec3(2.0,2.0,2.0); // to square things
-				if( index > 0.0 )
-				{
+			vec4 cxyz1, cxyz2, cxyz3; // texels at this point that are scaled by simplex
+			const vec3 vec_2 = vec3(2.0,2.0,2.0); // to square things
+			if( index > 0.0 )
+			{
 
-
-			// okay so let's figure this out; the normal is a unit vector, but the sum of each thing is not itself 1.
-			// but rather the sum of the squares.
+				// okay so let's figure this out; the normal is a unit vector, but the sum of each thing is not itself 1.
+				// but rather the sum of the squares.
 #define MAGIC_FUNCTION vec4( pow(cxy1.rgb * zzNormal.z,vec_2) + pow(cyz1.rgb * zzNormal.x,vec_2) + pow(cxz1.rgb * zzNormal.y,vec_2), \
 				1.0-sqrt(pow( ( 1.0-cxy1.a )* zzNormal.z,2.0) + pow((1.0-cyz1.a) * zzNormal.x,2.0) + pow((1.0-cxz1.a) * zzNormal.y,2.0) ) )
 
 
-			// compute spacial coordinate index (should add more layers here to auto rotate uv lookups based on fractional values of curDeltas.
-			vec4 cxy1 = texture( textureMap3, vec3(modulo.xy * TEXTURE_SCALAR,index) );
-			vec4 cyz1 = texture( textureMap3, vec3(modulo.yz * TEXTURE_SCALAR,index) );
-			vec4 cxz1 = texture( textureMap3, vec3(modulo.xz * TEXTURE_SCALAR,index) );
+				// compute spacial coordinate index (should add more layers here to auto rotate uv lookups based on fractional values of curDeltas.
+				vec4 cxy1 = texture( textureMap3, vec3(modulo.xy * TEXTURE_SCALAR,index) );
+				vec4 cyz1 = texture( textureMap3, vec3(modulo.yz * TEXTURE_SCALAR,index) );
+				vec4 cxz1 = texture( textureMap3, vec3(modulo.xz * TEXTURE_SCALAR,index) );
 
-			cxyz1 = MAGIC_FUNCTION;
+				cxyz1 = MAGIC_FUNCTION;
 
-			if( type2 > 0.0 && type1 > 0.0 ) {
-				// if both are not void, then compute the other point, and the delta to the other texture
-				index = type2;
-				// this calculates the position in a 3-plane repetition space; scaled by the normal.
-				cxy1 = texture( textureMap3, vec3(modulo.xy * TEXTURE_SCALAR,index) );
-				cyz1 = texture( textureMap3, vec3(modulo.yz * TEXTURE_SCALAR,index) );
-				cxz1 = texture( textureMap3, vec3(modulo.xz * TEXTURE_SCALAR,index) );
-				vec4 cxyz2 = MAGIC_FUNCTION;
-				// this is against a constant; current is the same everywhere.
-				cxyz1 = cxyz1 * curDeltas.x + cxyz2 * (1.0-curDeltas.x);
-			}
+				if( type2 > 0.0 && type1 > 0.0 ) {
+					// if both are not void, then compute the other point, and the delta to the other texture
+					index = type2;
+					// this calculates the position in a 3-plane repetition space; scaled by the normal.
+					cxy1 = texture( textureMap3, vec3(modulo.xy * TEXTURE_SCALAR,index) );
+					cyz1 = texture( textureMap3, vec3(modulo.yz * TEXTURE_SCALAR,index) );
+					cxz1 = texture( textureMap3, vec3(modulo.xz * TEXTURE_SCALAR,index) );
+					vec4 cxyz2 = MAGIC_FUNCTION;
+					// this is against a constant; current is the same everywhere.
+					cxyz1 = cxyz1 * curDeltas.x + cxyz2 * (1.0-curDeltas.x);
+					gl_FragColor = cxyz1;
+					gl_FragColor = vec4( (curDeltas.x), 0.0,0.0, 1.0);
+					//return;
+				}
+				cxyz1.rgb *= curDeltas.x;
 			} // else( got a index at all )
 			else {
 				cxyz1.r = -1.0;
@@ -471,9 +474,11 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 					cxz1 = texture( textureMap3, vec3(modulo.xz * TEXTURE_SCALAR,index) );
 					vec4 cxyz4 = MAGIC_FUNCTION;
 					cxyz2 = cxyz2 * curDeltas.y + cxyz4 * (1.0-curDeltas.y);
+					//gl_FragColor = cxyz2;
+					//gl_FragColor = vec4( 0.0, (curDeltas.x), 0.0, 1.0);
+					//return;
 				}
-				if( cxyz1.r < 0.0 )
-					cxyz1 = cxyz2;
+				cxyz2.rgb *= curDeltas.y;
 			} // else had a index at all.
 			else {
 				cxyz2.r = -1.0;
@@ -496,22 +501,45 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 					cxz1 = texture( textureMap3, vec3(modulo.xz * TEXTURE_SCALAR,index) );
 					vec4 cxyz6 = MAGIC_FUNCTION;
 					cxyz3 = cxyz3 * curDeltas.z + cxyz6 * (1.0-curDeltas.z);
-					//gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+					gl_FragColor = cxyz3;
+					gl_FragColor = vec4( 0.0,0.0,(curDeltas.z),  1.0);
 					//return;
 				}
-				if( cxyz1.r < 0.0 ){
-					cxyz1 = cxyz3;
-					cxyz2 = cxyz3;
-				}
+				cxyz3.rgb *= curDeltas.z;
+				//if( cxyz1.r < 0.0 ){
+				//	cxyz1 = cxyz3;
+				//	cxyz2 = cxyz3;
+				//}
 		
 			}else {
-				if( cxyz1.r > 0.0 ) cxyz3 = cxyz1;
-				else 
-					cxyz3 = vec4( 1.0, 0.0, 0.0, 1.0 );
+				cxyz3.r = -1.0;
 			}
 
 			// compute the final composite color into cxzy2 using the barycentric simplex scalar. (always adds to 1)
-			face = ( cxyz1 * 0.5 + cxyz2 * 0.5 + cxyz3 * 0.5 ) ;
+			if( cxyz1.r >= 0.0 ) {
+				if( cxyz2.r >= 0.0 ){
+					if( cxyz3.r >= 0.0 ) {
+						face = ( cxyz1 * 0.33 + cxyz2 * 0.33 + cxyz3 * 0.33 ) ;
+					}else {
+						face = ( cxyz1 * 0.5 + cxyz2 * 0.5 ) ;
+					}
+				} else {
+					if( cxyz3.r >= 0.0 ) {
+						face = cxyz1*0.5+cxyz3*0.5;
+					}
+					else
+						face = cxyz1;
+				}
+			} else if( cxyz2.r >= 0.0 ){
+				if( cxyz3.r >= 0.0 ){
+					face = cxyz1*0.5+cxyz3*0.5;;
+				}else
+					face = cxyz2;
+			} else {
+				face = cxyz3;
+			}
+			gl_FragColor = face;
+			return;
 
 			
                 }

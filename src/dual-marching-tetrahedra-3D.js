@@ -827,9 +827,72 @@ function ScaleNormalsByAngle( n, fnorm, v1, v2, v3 ) {
 }
 
 
+function QuatPathing(q, v, c) {
+	const spaceScale = 5;
+	const normal_del = 1;
+	const o = [6/spaceScale,+6/spaceScale,+6/spaceScale];
+	let prior_v = null;
+	for( var t = 0; t < 5; t+=0.01 ) {
+		
+		const new_v = q.applyDel( v, t );
+		new_v.x += o[0];new_v.y += o[1];new_v.z += o[2];
+			if( prior_v ) {
+				normalVertices.push( new THREE.Vector3( prior_v.x*spaceScale,prior_v.y*spaceScale, prior_v.z*spaceScale ))
+				normalVertices.push( new THREE.Vector3( new_v.x*spaceScale,new_v.y*spaceScale, new_v.z*spaceScale ))
+				normalColors.push( c)
+				normalColors.push( c)
+			}
+			prior_v = new_v;
+		if( t % 0.125  <= 0.01 ) {
+			const basis = q.getBasisT( t );
+
+
+			normalVertices.push( new THREE.Vector3( new_v.x*spaceScale,new_v.y*spaceScale, new_v.z*spaceScale ))
+			normalVertices.push( new THREE.Vector3( new_v.x*spaceScale + basis.right.x*normal_del,new_v.y*spaceScale + basis.right.y*normal_del,new_v.z*spaceScale + basis.right.z*normal_del ))
+
+			normalVertices.push( new THREE.Vector3( new_v.x*spaceScale                        ,new_v.y*spaceScale                        , new_v.z*spaceScale ))
+			normalVertices.push( new THREE.Vector3( new_v.x*spaceScale + basis.up.x*normal_del,new_v.y*spaceScale + basis.up.y*normal_del,new_v.z*spaceScale + basis.up.z*normal_del ))
+
+			normalVertices.push( new THREE.Vector3( new_v.x*spaceScale                             ,new_v.y*spaceScale                             , new_v.z*spaceScale ))
+			normalVertices.push( new THREE.Vector3( new_v.x*spaceScale + basis.forward.x*normal_del,new_v.y*spaceScale + basis.forward.y*normal_del,new_v.z*spaceScale + basis.forward.z*normal_del ))
+
+			normalColors.push( new THREE.Color( 255,0,0,255 ))
+			normalColors.push( new THREE.Color( 255,0,0,255 ))
+			normalColors.push( new THREE.Color( 0,255,0,255 ))
+			normalColors.push( new THREE.Color( 0,255,0,255 ))
+			normalColors.push( new THREE.Color( 0,0,255,255))
+			normalColors.push( new THREE.Color( 0,0,255,255 ))
+
+		}
+	};
+}
+
+
+function DrawQuatPaths(q) {
+
+			let lnQX = document.getElementById( "lnQX" ).value;
+			let lnQY = document.getElementById( "lnQY" ).value;
+			let lnQZ = document.getElementById( "lnQZ" ).value;
+			let lnQT = document.getElementById( "lnQT" ).value;
+			let lnQ = new lnQuat( 5*Math.PI*(lnQT/100), { x:lnQX/10-5, y:lnQY/10-5, z:lnQZ/10-5 } );
+
+
+	const xAxis = {x:1,y:0,z:0};
+	const yAxis = {x:0,y:1,z:0};
+	const zAxis = {x:0,y:0,z:1};
+	const cx = new THREE.Color( 192,192,0,255 );
+	const cy = new THREE.Color( 128,128,128,255 );
+	const cz = new THREE.Color( 0,192,192,255 );
+	QuatPathing( lnQ, xAxis, cx );
+	QuatPathing( lnQ, yAxis, cy );
+	QuatPathing( lnQ, zAxis, cz );
+}
+
 
 function meshCloud(data, dims) {
 
+	if( normalVertices ) 
+		DrawQuatPaths();
 	// values input to this are in 2 planes for lower and upper values
 	const dataOffset = [ 0, 1, dim0, 1+dim0, 0 + dim0*dim1,1 + dim0*dim1,dim0 + dim0*dim1, 1+dim0 + dim0*dim1] ;
 
@@ -1385,21 +1448,21 @@ function meshCloud(data, dims) {
 							//console.log( "vertices", tet, useFace, tri, "odd:",odd, "invert:", invert, "pos:", x, y, z, "dels:", pointStateHolder[ai].typeDelta, pointStateHolder[bi].typeDelta, pointStateHolder[ci].typeDelta, "a:", pointStateHolder[ai].invert, pointStateHolder[ai].type1, pointStateHolder[ai].type2, "b:", pointStateHolder[bi].invert, pointStateHolder[bi].type1, pointStateHolder[bi].type2, "c:", pointStateHolder[ci].invert, pointStateHolder[ci].type1, pointStateHolder[ci].type2 );
 							const p = [0,0,0], n = [0,0,0];
 							const tv = TetVert( p, n, psh1=pointStateHolder[ai], psh2=pointStateHolder[bi], psh3=pointStateHolder[ci] );
-if(normalVertices) {
-							normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
-							normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
-							normalColors.push( new THREE.Color( 255,0,0,255 ))
-							normalColors.push( new THREE.Color( 255,0,0,255 ))
-							normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
-							normalVertices.push( new THREE.Vector3( psh3.vertBuffer[0],psh3.vertBuffer[1],psh3.vertBuffer[2] ));
-							normalColors.push( new THREE.Color( 0,255,0,255 ))
-							normalColors.push( new THREE.Color( 0,255,0,255 ))
+							if(0 && normalVertices) {
+								normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
+								normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
+								normalColors.push( new THREE.Color( 255,0,0,255 ))
+								normalColors.push( new THREE.Color( 255,0,0,255 ))
+								normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
+								normalVertices.push( new THREE.Vector3( psh3.vertBuffer[0],psh3.vertBuffer[1],psh3.vertBuffer[2] ));
+								normalColors.push( new THREE.Color( 0,255,0,255 ))
+								normalColors.push( new THREE.Color( 0,255,0,255 ))
 
-							normalVertices.push( new THREE.Vector3( p[0],p[1],p[2] ))
-							normalVertices.push( new THREE.Vector3( p[0] + n[0]/2,p[1] + n[1]/2,p[2] + n[2]/2 ));
-							normalColors.push( new THREE.Color( 255,255,255,255 ))
-							normalColors.push( new THREE.Color( 255,255,255,255 ))
-}
+								normalVertices.push( new THREE.Vector3( p[0],p[1],p[2] ))
+								normalVertices.push( new THREE.Vector3( p[0] + n[0]/2,p[1] + n[1]/2,p[2] + n[2]/2 ));
+								normalColors.push( new THREE.Color( 255,255,255,255 ))
+								normalColors.push( new THREE.Color( 255,255,255,255 ))
+							}
 							const nlen = 1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2] );
 							n[0] *= nlen;
 							n[1] *= nlen;
@@ -1416,7 +1479,7 @@ if(normalVertices) {
 							const p = [0,0,0], n = [0,0,0];
 
 							const tv = TetVert( p, n, psh1 = pointStateHolder[ai], psh2 = pointStateHolder[bi], psh3= pointStateHolder[ci] );
-								if(normalVertices){
+								if(0 && normalVertices){
 									normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
 								normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
 								normalColors.push( new THREE.Color( 255,255,0,255 ))
@@ -1442,7 +1505,7 @@ if(normalVertices) {
 							// (what about elements? there's really 4!)
 							const tv2 = TetVert( p2, n2, psh1 = pointStateHolder[ai2], psh2 = pointStateHolder[bi2], psh3 = pointStateHolder[ci2],tv );
 	
-							if(normalVertices){
+							if(0 && normalVertices){
 								normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
 							normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
 							normalColors.push( new THREE.Color( 0,0,255,255 ))
