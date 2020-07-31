@@ -111,4 +111,21 @@ to just 1 if case , and its sub-cases...
 
 ![inflation](src/images/MarchingTet-Scaling.png )
 
+## References
 
+This paper inadvertantly describes this method, without directly defining the basis as
+tetrahedra, only tetrahedral regions are considered; (maybe a solution to the 5 point quads flipping)
+https://www.cse.wustl.edu/~taoju/research/interfree_paper_final.pdf
+
+
+Found but not really used; this describes the edge-tree associated with the octree.
+An edge-tree is used in MT to determine the faces within each tetrahedron.
+http://www.cs.jhu.edu/~misha/MyPapers/SGP07a.pdf
+
+
+This has a 'responsibility assignment' which delegates relavence between near points (?).
+https://www.academia.edu/38558591/Volume_octree_with_an_implicitly_defined_dual_grid
+
+
+Dual Quaterions... (Dual Numbers) Mostly because it was new; was pursuring repsenting the normals as quaternions... 
+https://cs.gmu.edu/~jmlien/teaching/cs451/uploads/Main/dual-quaternion.pdf
