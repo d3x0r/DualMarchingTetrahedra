@@ -1385,21 +1385,21 @@ function meshCloud(data, dims) {
 							//console.log( "vertices", tet, useFace, tri, "odd:",odd, "invert:", invert, "pos:", x, y, z, "dels:", pointStateHolder[ai].typeDelta, pointStateHolder[bi].typeDelta, pointStateHolder[ci].typeDelta, "a:", pointStateHolder[ai].invert, pointStateHolder[ai].type1, pointStateHolder[ai].type2, "b:", pointStateHolder[bi].invert, pointStateHolder[bi].type1, pointStateHolder[bi].type2, "c:", pointStateHolder[ci].invert, pointStateHolder[ci].type1, pointStateHolder[ci].type2 );
 							const p = [0,0,0], n = [0,0,0];
 							const tv = TetVert( p, n, psh1=pointStateHolder[ai], psh2=pointStateHolder[bi], psh3=pointStateHolder[ci] );
-if(normalVertices) {
-							normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
-							normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
-							normalColors.push( new THREE.Color( 255,0,0,255 ))
-							normalColors.push( new THREE.Color( 255,0,0,255 ))
-							normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
-							normalVertices.push( new THREE.Vector3( psh3.vertBuffer[0],psh3.vertBuffer[1],psh3.vertBuffer[2] ));
-							normalColors.push( new THREE.Color( 0,255,0,255 ))
-							normalColors.push( new THREE.Color( 0,255,0,255 ))
+							if(normalVertices) {
+								normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
+								normalVertices.push( new THREE.Vector3( psh2.vertBuffer[0],psh2.vertBuffer[1],psh2.vertBuffer[2] ));
+								normalColors.push( new THREE.Color( 255,0,0,255 ))
+								normalColors.push( new THREE.Color( 255,0,0,255 ))
+								normalVertices.push( new THREE.Vector3( psh1.vertBuffer[0],psh1.vertBuffer[1],psh1.vertBuffer[2] ))
+								normalVertices.push( new THREE.Vector3( psh3.vertBuffer[0],psh3.vertBuffer[1],psh3.vertBuffer[2] ));
+								normalColors.push( new THREE.Color( 0,255,0,255 ))
+								normalColors.push( new THREE.Color( 0,255,0,255 ))
 
-							normalVertices.push( new THREE.Vector3( p[0],p[1],p[2] ))
-							normalVertices.push( new THREE.Vector3( p[0] + n[0]/2,p[1] + n[1]/2,p[2] + n[2]/2 ));
-							normalColors.push( new THREE.Color( 255,255,255,255 ))
-							normalColors.push( new THREE.Color( 255,255,255,255 ))
-}
+								normalVertices.push( new THREE.Vector3( p[0],p[1],p[2] ))
+								normalVertices.push( new THREE.Vector3( p[0] + n[0]/2,p[1] + n[1]/2,p[2] + n[2]/2 ));
+								normalColors.push( new THREE.Color( 255,255,255,255 ))
+								normalColors.push( new THREE.Color( 255,255,255,255 ))
+							}
 							const nlen = 1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2] );
 							n[0] *= nlen;
 							n[1] *= nlen;
