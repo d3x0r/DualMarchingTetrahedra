@@ -6,23 +6,23 @@ Yellow lines show mating faces - there isn't really a gap between blue and red c
 This is 11 simple cells connnected together.  This arrangment is fairly stable, and can
 continue alternating red-blue forever, in every direction.
 
-![Multitexture exmaple](sm20200506_094458.jpg )
+![Multitexture exmaple](sm20200506_094458.jpg)
 
 A single cell - skew alignment...
 
-![Multitexture exmaple](sm20200506_094548.jpg )
+![Multitexture exmaple](sm20200506_094548.jpg)
 
 
 A single cell - recti-linear aligned... this is the top of a 'cube' cell.
 THe corners that are elongated should be considered compressed into the points of the cube...
 
-![Multitexture exmaple](sm20200506_094554.jpg )
+![Multitexture exmaple](sm20200506_094554.jpg)
 
 This is a Amalgamated Cell... this is actually proper alignment of points. (see below).
 This is a point-on view.  All points look the same.
 
 
-![Multitexture exmaple](sm20200506_094702.jpg )
+![Multitexture exmaple](sm20200506_094702.jpg)
 
 
 This is the rectangular view of the cell.  This is a square-on view of a complex cell.
@@ -30,11 +30,11 @@ This is an octet of cells... the center points (and outside corners) are missing
 This shows the alternating arrangement of cells in the lattice. The firat image above, the 4x4 grouping
 of simple cells, includes all the points and segments, but has been displaced.  
 
-![Multitexture exmaple](sm20200506_094730.jpg )
+![Multitexture exmaple](sm20200506_094730.jpg)
 
 This is the other edge-on view...
 
-![Multitexture exmaple](sm20200506_094749.jpg )
+![Multitexture exmaple](sm20200506_094749.jpg)
 
 
 See also
