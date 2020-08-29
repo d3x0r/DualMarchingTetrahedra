@@ -67,7 +67,7 @@
 			Minimize: <input type="radio" name="inflationMode" id="minimize" ></p>
 		<p>Outside: <input type="radio" name="filler"  id="fillOutside" > Inside: <input type="radio" name="filler"  id="fillInside" > - Open: <input type="radio" name="filler" id="fillOpen" value="checked"></p>
 
-		<p>X:<input type="range" id="lnQX" value="50"> Y:<input type="range" id="lnQY" value="50"> Z:<input type="range" id="lnQZ" value="50"> T:<input type="range" id="lnQT" value="50"> </p>
+		<p>Zero Level<input type="range" id="zeroLevel" value="50"> </p>
 
 	  </div>
 	</div>
@@ -139,7 +139,8 @@
 			else 
 				inflatVal = 1+( inflatVal - 50 ) / 5;
 
-
+			var zeroLevel = document.getElementById( "zeroLevel" )?.value || 50;
+			zeroLevel =  ( ( zeroLevel / 50 ) - 1 ) * 3;
 
 			let maximize = document.getElementById( "maximize" ).checked;
 			let minimize = document.getElementById( "minimize" ).checked;
@@ -152,7 +153,7 @@
 			for( var z = 0; z < field.dims[2]; z++ ) {
 				for( var y = 0; y < field.dims[1]; y++ ) {
 					for( var x = 0; x < field.dims[0]; x++ ) {
-						var a = field.data[n];
+						var a = field.data[n] - zeroLevel;
 						if( a > 0 ) {
 							if( harden ) {
 								newData.push( 9.0 );  // 1:10
@@ -584,16 +585,8 @@
 			is.checked  = false;
 
 
-			is = document.getElementById( "lnQX" );
+			is = document.getElementById( "zeroLevel" );
 			is.oninput = updateMesh;
-			is = document.getElementById( "lnQY" );
-			is.oninput = updateMesh;
-			is = document.getElementById( "lnQZ" );
-			is.oninput = updateMesh;
-			is = document.getElementById( "lnQT" );
-			is.oninput = updateMesh;
-
-
 
 			is = document.getElementById( "inflation" );
 			is.oninput = updateMesh;
