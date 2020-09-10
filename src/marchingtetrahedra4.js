@@ -85,8 +85,9 @@ this is the vertex references on the right, and which 'vert N' applies.
 
 */
 
-var MarchingTetrahedra4 = (function() {
-const debug_ = false;
+import {lnQuat} from "./lnQuat.js"
+
+function MarchingTetrahedra4() {
 	// static working buffers
 
 	var sizes = 0;
@@ -215,16 +216,16 @@ function meshCloud(data, dims) {
 	// index with [odd] [tet_of_cube] [0-5 line index]
 	// result is composite point data offset.
 	const edgeToComp = [
-		[[1*dim0*dim1*6  + 0,1*dim0*dim1*6  + 3,1,1*dim0*dim1*6  + 4,5,2]
-		 ,[1*6 + 0,1*6 + 2,4,1*6 + 1,5,3]
-		 ,[1*dim0*6  + 3,1*dim0*6  + 1,0,1*dim0*6  + 5,2,4]
-		 ,[1*dim0*dim1*6  + 1*dim0*6  + 3,1*dim0*dim1*6  + 4,1*dim0*6  + 5,1*dim0*dim1*6  + 1*6 + 0,1*6 + 2,1*dim0*6  + 1*6 + 1]
-		 ,[2,5,4,1*dim0*dim1*6  + 4,1*6 + 2,1*dim0*6  + 5]]
-		,[[0,1,3,2,5,4]
-		 ,[1*dim0*dim1*6  + 4,1*dim0*dim1*6  + 3,5,1*dim0*dim1*6  + 1*6 + 0,1*6 + 1,1*6 + 2]
-		 ,[1*dim0*dim1*6  + 1*dim0*6  + 3,1*dim0*dim1*6  + 0,1*dim0*6  + 1,1*dim0*dim1*6  + 4,2,1*dim0*6  + 5]
-		 ,[1*6 + 0,1*dim0*6  + 1*6 + 1,1*dim0*6  + 3,1*6 + 2,1*dim0*6  + 5,4]
-		 ,[4,5,1*6 + 2,2,1*dim0*dim1*6  + 4,1*dim0*6  + 5]
+		[ [1*dim0*dim1*6  + 0            , 1*dim0*dim1*6  + 3, 1            , 1*dim0*dim1*6  + 4      , 5      , 2                 ]
+		 ,[1*6 + 0                       , 1*6 + 2           , 4            , 1*6 + 1                 , 5      , 3                 ]
+		 ,[1*dim0*6  + 3                 , 1*dim0*6  + 1     , 0            , 1*dim0*6  + 5           , 2      , 4                 ]
+		 ,[1*dim0*dim1*6  + 1*dim0*6  + 3, 1*dim0*dim1*6  + 4, 1*dim0*6  + 5, 1*dim0*dim1*6  + 1*6 + 0, 1*6 + 2,1*dim0*6  + 1*6 + 1]
+		 ,[2                             , 5                 , 4            , 1*dim0*dim1*6  + 4      , 1*6 + 2,1*dim0*6  + 5      ]]
+		,[[0                             , 1                  , 3            , 2                       , 5                , 4       ]
+		 ,[1*dim0*dim1*6  + 4            , 1*dim0*dim1*6  + 3 , 5            , 1*dim0*dim1*6  + 1*6 + 0, 1*6 + 1          , 1*6 + 2 ]
+		 ,[1*dim0*dim1*6  + 1*dim0*6  + 3, 1*dim0*dim1*6  + 0 , 1*dim0*6  + 1, 1*dim0*dim1*6  + 4     , 2                 , 1*dim0*6  + 5]
+		 ,[1*6 + 0                       , 1*dim0*6  + 1*6 + 1, 1*dim0*6  + 3, 1*6 + 2                , 1*dim0*6  + 5     , 4         ]
+		 ,[4                             , 5                  , 1*6 + 2      , 2                      , 1*dim0*dim1*6  + 4, 1*dim0*6  + 5]
 		 ]
 		];
 	
@@ -299,7 +300,8 @@ function meshCloud(data, dims) {
 	
 		let odd = 0;
 		let zOdd = z & 1;
-		cellOrigin[2] = z-0.5;
+		cellOrigin[2] = z-dim2/2;
+		//cellOrigin[2] *= Math.PI;
 
 		// compute one layer (x by y) intersections (cross from inside to outside).
 		// each cell individually has 16 intersections
@@ -307,12 +309,13 @@ function meshCloud(data, dims) {
 		// 3 intersections per cell after the first layer can be copied; but shift in position (moving from the top to the bottom)
 		// 
 		for( var y = 0; y < dim1-1; y++ ) {
-			cellOrigin[1] = y-0.5;
+			cellOrigin[1] = y-dim1/2;
+			//cellOrigin[1] *= Math.PI;
 			for( var x = 0; x < dim0-1; x++ ) {
 				odd = (( x + y ) &1) ^ zOdd;
 	
-				cellOrigin[0] = x-0.5;
-	
+				cellOrigin[0] = x-dim0/2;
+				//cellOrigin[0] *= Math.PI;
 				const baseHere = (x+0 + y*dim0 + z*(dim0*dim1))*6;
 				const baseOffset = x+0 + y*dim0 + z * dim0*dim1;
 				const lineArray = linesMin[odd];
@@ -347,7 +350,7 @@ function meshCloud(data, dims) {
 					const data0=baseOffset+dataOffset[p0];
 					const data1=baseOffset+dataOffset[p1];
 	
-					d=-data[data0]; e=-data[data1];
+					const d=-data[data0]; const e=-data[data1];
 	
 					if( ( d <= 0 && e >0  )|| (d > 0 && e <= 0 ) ){
 						let t;
@@ -364,15 +367,15 @@ function meshCloud(data, dims) {
 								} else if( t > 1-0.001 ){
 									//console.log( "t1a at ", x, y, z, p1, baseOffset+ dataOffset[p1] );
 									normal = pointMerge[baseOffset+dataOffset[p0]];
-							}
+								}
 								if( !normal ) {
 									pointOutputHolder[0] = cellOrigin[0]+ geom[p1][0]+( geom[p0][0]- geom[p1][0])* t;
 									pointOutputHolder[1] = cellOrigin[1]+ geom[p1][1]+( geom[p0][1]- geom[p1][1])* t;
 									pointOutputHolder[2] = cellOrigin[2]+ geom[p1][2]+( geom[p0][2]- geom[p1][2])* t;
 									normal = opts.geometryHelper.addPoint( pointOutputHolder
 										 , null, null // texture, and uv[1,0] 
-										 , [0xA0,0x00,0xA0,255] // edge color
-										 , [0x11, 0x11, 0x11, 255] // face color
+										 , [0xA0,0x00,0xA0,96] // edge color
+										 , [0x11, 0x11, 0x11, 96] // face color
 										 , [0,0,0] // normal *needs to be updated*;
 										 , 100 // pow
 										 , false // use texture
@@ -416,8 +419,8 @@ function meshCloud(data, dims) {
 									pointOutputHolder[2] = cellOrigin[2]+ geom[p0][2]+( geom[p1][2]- geom[p0][2])* t;
 									normal = opts.geometryHelper.addPoint( pointOutputHolder
 										 , null, null // texture, and uv[1,0] 
-										 , [0xA0,0x00,0xA0,255] // edge color
-										 , [0x11, 0x11, 0x11, 255] // face color
+										 , [0xA0,0x00,0xA0,96] // edge color
+										 , [0x11, 0x11, 0x11, 96] // face color
 										 , [0,0,0] // normal *needs to be updated*;
 										 , 100 // pow
 										 , false // use texture
@@ -442,6 +445,7 @@ function meshCloud(data, dims) {
 // --^-^-^-^-^-^-- END  OUTPUT POINT 2 HERE --^-^-^-^-^-^--
 						}
 						if( normal ){
+							normal.q = [];
 							// 'normal' in this context is a vertex reference
 							debug_ && (normal.adds = 0);
 							normals[baseHere+l] = normal;
@@ -459,9 +463,355 @@ function meshCloud(data, dims) {
 						crosses[baseHere+l] = 0;
 					}
 				}
+				
+				function processOddNormals()
+				{
+					if( crossest[baseHere +0] ) {
+						
+					}
+					if( crosses[baseHere +1] ) {
+					}
+					if( crosses[baseHere +2] ) {
+					}
+					if( crosses[baseHere +3] ) {
+					}
+					if( crosses[baseHere +4] ) {
+					}
+					if( crosses[baseHere +5] ) {
+					}
+				}
+
+const normalPairs = [[ [ [3,4],[1,2]], [ [0,2],[3,5]], [ [0,1],[4,5]], [ [0,4],[1,5]], [ [0,3],[2,5]], [ [1,3],[2,4]] ]
+		     [],
+]
+
+				function processEvenNormals()
+				{
+					let chk; 
+					if( crosses[baseHere +0] ) {
+						const here = normals[baseHere+0];
+						if( x > 0 ) {
+							
+							if( chk = normals[baseHere + 3 + (-1)*9 ]) { // flat left
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+							if( chk = normals[baseHere + 4 + (-1)*9 ]) {
+								if( here.typeInvert == chk.typeInvert ) {
+									// this is a diagonal.
+									push( new lnQuat( {x:chk.t, y:0, z:here.t - chk.t } ) );
+								}
+							}
+						}
+						if( chk = normals[baseHere + 3 ]) {// flat in-cell
+								if( here.typeInvert == chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+						}
+						if( chk = normals[baseHere + 4 ]) { // flat in-cell
+								if( here.typeInvert == !chk.typeInvert ) {
+									// this is a diagonal.
+									push( new lnQuat( {x:chk.t, y:0, z:here.t - chk.t } ) );
+								}
+						}
+
+
+						if( y > 0 ) {
+							if( chk = normals[baseHere + 1 + (-1*dim0)*9 ]) { // vertical down
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+							if( chk = normals[baseHere + 2 + (-1*dim0)*9 ]) {
+								// diagonal.
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+						}
+
+						if( chk = normals[baseHere + 1 ]) { // vertical
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+						}
+						if( chk = normals[baseHere + 2 ]) { // vertical
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+						}
+						
+					}
+		
+					if( crosses[baseHere +1] ) {
+						// /*0, */  3, -y+0, -x+3   5 -x 5  2 -y2
+						const here = normals[baseHere+1];
+						if( z > 0 ) {
+							if( chk = normals[baseHere+0 + (-1*dim0*dim1)*9] ) {
+								if( here.typeInvert === !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+							if( chk = normals[baseHere+2 + (-1*dim0*dim1)*9] ) {
+								if( here.typeInvert === chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+						}
+						if( x > 0 ) {
+							
+							if( chk = normals[baseHere+5 + (-1)*9] ) {
+								if( here.typeInvert === chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+							if( chk = normals[baseHere+3 + (-1)*9] ) {
+								if( here.typeInvert === !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+						}
+
+						// +0 is already checked above in-cell.
+						if( chk = normals[baseHere+2] ) {
+							if( here.typeInvert === chk.typeInvert ) {
+								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+							}
+						}
+
+						if( chk = normals[baseHere+3] ) {
+							if( here.typeInvert === chk.typeInvert ) {
+								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+							}
+						}
+						if( chk = normals[baseHere+5] ) {
+							if( here.typeInvert === chk.typeInvert ) {
+								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+							}
+						}
+						
+					}
+					if( crosses[baseHere +2] ) {
+						// /*0,*/ 4, /*1,*/  5, -x4, /* +z1, +y0 +z3 no data, resolved later */
+						const here = normals[baseHere+2];
+						if( x > 0 ) {
+							if( chk = normals[baseHere+4 + (-1)*9] ) {
+								if( here.typeInvert === chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+						} 
+						if( chk = normals[baseHere+4] ) {
+							if( here.typeInvert === chk.typeInvert ) {
+								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+							}
+						}
+						if( chk = normals[baseHere+5] ) {
+							if( here.typeInvert === chk.typeInvert ) {
+								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+							}
+						}
+						
+					}
+					if( crosses[baseHere +3] ) {
+						//  /*0, 1*/, 5, 4, 
+						const here = normals[baseHere+3];
+						if( y > 0 ) {
+							if( chk = normals[baseHere + 1 + (-1*dim0)*9 ]) { // vertical down
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+							if( chk = normals[baseHere + 5 + (-1*dim0)*9 ]) { // vertical down
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+						}
+						if( z > 0 ) {
+							if( chk = normals[baseHere+0 + (-1*dim0*dim1)*9] ) {
+								if( here.typeInvert === !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+						}
+					
+						if( chk = normals[baseHere+4] ) {
+							if( here.typeInvert === chk.typeInvert ) {
+								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+							}
+						}
+
+						if( chk = normals[baseHere+5] ) {
+							if( here.typeInvert === chk.typeInvert ) {
+								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+							}
+						}
+					}
+					if( crosses[baseHere +4] ) {
+						const here = normals[baseHere+4];
+						if(y > 0 ) {
+							if( chk = normals[baseHere + 2 + (-1*dim0)*9 ]) { // vertical down
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+							if( chk = normals[baseHere + 5 + (-1*dim0)*9 ]) { // vertical down
+								if( here.typeInvert == !chk.typeInvert ) {
+									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+								}
+							}
+						}
+						if( chk = normals[baseHere+5] ) {
+							if( here.typeInvert === chk.typeInvert ) {
+								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
+							}
+						}
+					}
+					function push(q) {	
+						here.q.push(q);
+						chk.q.push(q);
+					}
+				}
 			}
 		}
 	}
+
+if(0)
+	for( var z = 0; z < dim2; z++ ) {
+	
+		let odd = 0;
+		let zOdd = z & 1;
+
+		// for all bounday crossed points, generate the faces from the intersection points.
+		for( var y = 0; y < dim1; y++ ) {
+			for( var x = 0; x < dim0; x++ ) {
+				var tetSkip = 0;
+				const baseOffset = (x + (y*dim0) + z*dim0*dim1)*6;
+				if( !bits[baseOffset] ) {
+					// if nothing in x, x+1, y+1, just 1 bit in forward right wouldn't be enough.
+					if( !bits[baseOffset + 1] && !bits[baseOffset + dim0] && !bits[baseOffset + dim0*dim1] ) {
+							//console.log( "Skip:", (x+1)+y*dim0, x, y, z );
+							//continue;
+					}
+				}
+
+				if( x >= (dim0-1)) tetSkip |= 1;
+				if( y >= (dim1-1)) tetSkip |= 2;
+				if( z >= (dim2-1)) tetSkip |= 4;
+				const dataOffset = x + (y*dim0) + z*dim1*dim0;
+	        		odd = (( x + y ) &1) ^ zOdd;
+				for( let n = 0; n < 9; n++ ) {
+					//if( tetMasks[odd][tet] & tetSkip ) continue;
+
+					let f;
+					let invert = 0;
+					let useFace = 0;
+					let idx;
+					// this is 'valid combinations' check.
+					if( crosses[ baseOffset+n ] ) {
+						const here = normals[baseOffset+n];
+						if( here.typeInvert ) {
+							// outside is from 2 to 0
+						} else {
+							// outside is from 0 to 2
+							
+						}
+						switch(n) {
+							case 0:								
+								if( odd ) {
+									if( x > 0 ) {
+										if( crosses[idx = baseOffset + 4 (-1)*9] ) {
+											const n2 = normals[idx];
+											if( n2.typeInvert ) {
+												// this is from 1 to 0
+												if( here.typeInvert ) { 
+												} else { 
+												}
+											}else {
+												// this is from 0 to 1
+												if( here.typeInvert ) { } 
+												else { 
+												}
+											}
+											
+										}
+								        
+										if( crosses[idx = baseOffset + 4 (-1)*9] ) {
+											const n2 = normals[idx];
+											if( n2.typeInvert ) {
+												// this is from 1 to 0
+												if( here.typeInvert ) { 
+												} else { 
+												}
+											}else {
+												// this is from 0 to 1
+												if( here.typeInvert ) { } 
+												else { 
+												}
+											}
+											
+										}
+										
+									}
+								} else {
+					
+								}
+								if( crosses[idx = baseOffset + 3] ) {
+									
+								}
+						}
+						//console.log( `Output: odd:${odd} tet:${tet} x:${x} y:${y} a:${JSON.stringify(a)}` );
+						if( crosses[ baseOffset+edgeToComp[odd][tet][1] ] ) {
+							if( crosses[ baseOffset+edgeToComp[odd][tet][2] ] ) {
+								// lower left tet. // source point is 0
+								useFace = 1;
+								invert = ( data[dataOffset+vertToData[odd][tet][0]] >= 0 )?1:0;
+							} else {
+								if( crosses[ baseOffset+edgeToComp[odd][tet][4] ] && crosses[ baseOffset+edgeToComp[odd][tet][5] ]) {
+									// source point is 2? 1?   (0?3?)
+									useFace = 2;
+									invert = ( data[dataOffset+vertToData[odd][tet][0]] >= 0 )?1:0 ;
+								}
+							}
+						} else {
+							if( crosses[ baseOffset+edgeToComp[odd][tet][2]] && crosses[ baseOffset+edgeToComp[odd][tet][3]] && crosses[ baseOffset+edgeToComp[odd][tet][4] ] ) {
+								// source point is ? 1? 3?   (0? 2?)
+								useFace = 3;
+								invert = ( data[dataOffset+vertToData[odd][tet][0]] >= 0 )?1:0  ;
+							}else if( crosses[ baseOffset+edgeToComp[odd][tet][3]] && crosses[ baseOffset+edgeToComp[odd][tet][5] ] ) {
+								// source point is 1
+								useFace = 4;
+								invert = ( data[dataOffset+vertToData[odd][tet][1]] >= 0 )?1:0
+							}
+						}
+					} else {
+						if( crosses[ baseOffset+edgeToComp[odd][tet][1] ] ) {
+							if( crosses[ baseOffset+edgeToComp[odd][tet][2] ] && crosses[ baseOffset+edgeToComp[odd][tet][3] ] && crosses[ baseOffset+edgeToComp[odd][tet][5] ]) {
+								// 0?1?   2?3?
+								useFace = 5;
+								invert = ( data[dataOffset+vertToData[odd][tet][0]] >= 0 )  ?1:0
+							} else if( crosses[ baseOffset+edgeToComp[odd][tet][3]] && crosses[ baseOffset+edgeToComp[odd][tet][4] ] ) {
+								// source point is 2
+								useFace = 6;
+								invert = ( data[dataOffset+vertToData[odd][tet][2]] >= 0 ) ?1:0
+							}
+						} else {
+							if( crosses[ baseOffset+edgeToComp[odd][tet][2] ] && crosses[ baseOffset+edgeToComp[odd][tet][4]] && crosses[ baseOffset+edgeToComp[odd][tet][5] ] ) {
+								// source point is 3
+								useFace = 7;
+								invert = ( data[dataOffset+vertToData[odd][tet][3]] >= 0 ) ?1:0
+							} else {
+							}
+						}
+					}
+					//if( useFace > 5 || useFace < 5 ) continue;
+				}
+			}
+		}
+	}
+
 
 
 	for( var z = 0; z < dim2; z++ ) {
@@ -487,7 +837,7 @@ function meshCloud(data, dims) {
 				if( z >= (dim2-1)) tetSkip |= 4;
 				const dataOffset = x + (y*dim0) + z*dim1*dim0;
 	        		odd = (( x + y ) &1) ^ zOdd;
-				for( tet = 0; tet < 5; tet++ ) {
+				for( let tet = 0; tet < 5; tet++ ) {
 					if( tetMasks[odd][tet] & tetSkip ) continue;
 
 					let f;
@@ -544,10 +894,12 @@ function meshCloud(data, dims) {
 					if( useFace-- ) {
 						bits[dataOffset] = 1; // set any 1 bit is set here.
 						const fpi = facePointIndexes[odd][tet][invert][useFace];
+
 						for( var tri=0;tri< fpi.length; tri++ ){
 							const ai = baseOffset+fpi[tri][0];
 							const bi = baseOffset+fpi[tri][1];
 							const ci = baseOffset+fpi[tri][2];
+							
 							// ai, bi, ci are indexes into computed pointcloud layer.
 // --V-V-V-V-V-V-V-V-- GENERATE OUTPUT FACE --V-V-V-V-V-V-V-V--
 
@@ -821,9 +1173,8 @@ function meshCloud(data, dims) {
 }
 
 }
-})()
-
-if("undefined" != typeof exports) {
-	exports.mesher = MarchingTetrahedra4;
 }
+
+export {MarchingTetrahedra4}
+
 

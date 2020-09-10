@@ -110,7 +110,7 @@ function GeometryBuffer() {
          //console.log( "dirty", this.geometry.attributes );
      }
 
-     buffer.addPoint = function( v, t, tBase, c, fc, n, p, ut, flat, dt, mod, type1, type2, typeDelta ) {
+     buffer.addPoint = function( v, t, tBase, c, fc, n, p, ut, flat, dt, mod, type1, type2, typeDelta, invert ) {
          if( this.used >= this.available )
             this.expand();
             const u2 = this.used * 2;
@@ -156,7 +156,7 @@ function GeometryBuffer() {
             id:this.used++,
             normalBuffer:this.normal.subarray(u3,u3+3),
             vertBuffer:this.position.subarray(u3,u3+3),
-		type1:type1, type2:type2, typeDelta:typeDelta, // saved just as meta for later
+		type1:type1, type2:type2, typeDelta:typeDelta, typeInvert:invert// saved just as meta for later
         }
         this.resultedPoints.push(result);
         return result;

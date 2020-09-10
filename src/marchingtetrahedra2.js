@@ -93,8 +93,6 @@ function tetCompute( values, geometry, invert ) {
 		values[3] = 0-values[3];
 	}
 	if( zero_is_outside ) {
-
-	        //if( ( values[0] < 0 ) ) 
 		{
 			// 0 is outside
         		if( values[1] >= 0 ) {
@@ -509,11 +507,6 @@ const geom = [
 	//  0,1  3,1  0,1  0,2
 
 
-const tetShare =[
-	
-];
-
-
 // 2-4
 // 4-1
 // 1-7
@@ -575,8 +568,6 @@ function cellCompute( alt, values, geom ) {
 	        	tetCompute( v, g, false );
 		}
 	}
-	
-
 }
 
 
@@ -617,15 +608,12 @@ function cellCompute( alt, values, geom ) {
 					values[1][3] = -1;
 				}
 				cellCompute( (x+y+z)&1, values, geom );
-				
 			}
 		}
 	}
 
-
-
   
-  return { vertices: vertices, faces: faces };
+	return { vertices: vertices, faces: faces };
 }
 })();
 
