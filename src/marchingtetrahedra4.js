@@ -210,6 +210,232 @@ function meshCloud(data, dims) {
 	const dim2 = dims[2];
 	const dataOffset = [ 0, 1, dim0, 1+dim0, 0 + dim0*dim1,1 + dim0*dim1,dim0 + dim0*dim1, 1+dim0 + dim0*dim1] ;
 
+	const d = (a)=>a.typeDelta*(a.typeInvert?-1:0);
+
+	const normalPairs = [[ [ { not : true, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b)-0,y:0,z:-(0-d(a))} ) }
+                         , x : true, line:3 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b)-(d(a)*0.7071 - 1),y:0,z:-(0-d(a)*0.7071)  } ) }
+                         , x : true, line:4 }
+
+                       , { not : true, set: 1
+                         , f(a,b) { return new lnQuat( {x:0, y:d(b)-0, z:-(0-d(a))} ) }
+                         , y : true, line:1 }
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:0, y:d(b)-(1 - d(a)*0.7071),z:-(0-d(a)*0.7071)  } ) }
+                         , y : true, line:2 }
+                       ]
+
+                     , [ { not : true, set: 0
+                         , f(a,b) { return new lnQuat( {x:0,y:d(a),z:d(b)} ) }
+                         , z : true, line:0 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:0,y:d(a)*0.7071-d(b),z:d(a)*0.7071} ) }
+                         , z : true, line:2 }
+
+                       , { not : true, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:d(a),z:0} ) }
+                         , x : true, line:3 }
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b)-d(a)*0.7071,y:d(a)*0.7071,z:0} ) }
+                         , x : true, line:4 }
+                       ]
+                     , [ { not : true, set: 0 // 2
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , x : true, line:5 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , x : true, zIn:true, line:4 }
+
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , x : true, yIn:false, line:5 }
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , x : true, yIn:false, line:4 }
+			
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:0 }
+                       , { not : false, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:1 }
+                       ]
+
+                     , [ { not : true, set: 0 // 3
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , z : true, line:0 }
+
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, line:4 }
+                       , { not : true, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, y:true, line:1 }
+                       , { not : true, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, y:true, line:4 }
+                       ]
+
+                     , [ { not : true, set: 0 // 4
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , z : true, yIn:true, line:5 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, xIn:true, line:2 }
+
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, yIn:true, line:5 }
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, yIn:false, line:2 }
+			
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:1 }
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:3 }
+                       ]
+
+                     , [ { not : true, set: 0 // 5
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , y : true, zIn:true, line:4 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : true, xIn:true, line:2 }
+
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : true, yIn:false, line:2 }
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : true, yIn:false, line:4 }
+			
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:0 }
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:3 }
+                       ]
+			]
+		     ,[ [ { not : true, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b)-0,y:0,z:-(0-d(a))} ) }
+                         , x : true, line:3 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b)-(d(a)*0.7071 - 1),y:0,z:-(0-d(a)*0.7071)  } ) }
+                         , x : true, line:4 }
+
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:0, y:d(b)-0, z:-(0-d(a))} ) }
+                         , y : true, line:1 }
+                       , { not : true, set: 1
+                         , f(a,b) { return new lnQuat( {x:0, y:d(b)-(1 - d(a)*0.7071),z:-(0-d(a)*0.7071)  } ) }
+                         , y : true, line:2 }
+                       ]
+
+                     , [ { not : true, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , z : true, line:0 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, line:2 }
+
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , x : true, line:5 }
+                       , { not : true, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , x : true, line:3 }
+
+                       ]
+                     , [ { not : true, set: 0 // 2
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , x : true, line:5 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , x : true, zIn:true, line:4 }
+
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , x : true, yIn:true, line:5 }
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , x : true, yIn:false, line:3 }
+			
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:0 }
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:1 }
+                       ]
+
+                     , [ { not : true, set: 0 // 3
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , z : true, line:0 }
+
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, line:4 }
+                       , { not : true, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, y:true, line:1 }
+
+                       , { not : true, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, y:true, line:4 }
+                       ]
+
+                     , [ { not : true, set: 0 // 4
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , z : true, yIn:true, line:5 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, xIn:true, line:2 }
+
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, yIn:true, line:5 }
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , z : true, yIn:false, line:2 }
+			
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:1 }
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:3 }
+                       ]
+
+                     , [ { not : true, set: 0 // 5
+                         , f(a,b) { return new lnQuat( {x:d(a),y:0,z:d(b)} ) }
+                         , y : true, zIn:true, line:4 }
+                       , { not : false, set: 0
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : true, xIn:true, line:2 }
+
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : true, yIn:false, line:2 }
+                       , { not : false, set: 1
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : true, yIn:false, line:4 }
+			
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:0 }
+                       , { not : true, set: 2
+                         , f(a,b) { return new lnQuat( {x:d(b),y:0,z:d(a)} ) }
+                         , y : false, line:3 }
+                       ]
+		    ],
+		]
+
 	// vertex paths 0-1 0-2, 0-3  1-2 2-3 3-1
 	// this is the offset from dataOffset to the related value.
 
@@ -396,10 +622,12 @@ function meshCloud(data, dims) {
 								}
 								points[baseHere+l] = normal.id;
 							}
-							else
+							else {
+								normal = { typeInvert : true, typeDelta: t,normalBuffer:[0,0,0] }
 								points[baseHere+l] = (vertices.push(new THREE.Vector3(cellOrigin[0]+ geom[p1][0]+( geom[p0][0]- geom[p1][0])* t
 								           , cellOrigin[1]+ geom[p1][1]+( geom[p0][1]- geom[p1][1])* t
 								           , cellOrigin[2]+ geom[p1][2]+( geom[p0][2]- geom[p1][2])* t )),vertices.length-1);
+							}
 // --^-^-^-^-^-^-- END OUTPUT POINT(VERTEX) HERE --^-^-^-^-^-^--
 						} else {
 							(t = -d/(e-d));
@@ -438,10 +666,20 @@ function meshCloud(data, dims) {
 								}
 								points[baseHere+l] = normal.id;
 							}
-							else
+							else {
+/*
+        let result = {
+            id:this.used++,
+            normalBuffer:this.normal.subarray(u3,u3+3),
+            vertBuffer:this.position.subarray(u3,u3+3),
+		type1:type1, type2:type2, typeDelta:typeDelta, typeInvert:invert// saved just as meta for later
+        }
+*/
+								normal = { typeInvert : true, typeDelta: t,normalBuffer:[0,0,0] }
 								points[baseHere+l] =( vertices.push(new THREE.Vector3(cellOrigin[0]+ geom[p0][0]+( geom[p1][0]- geom[p0][0])* t
 										, cellOrigin[1]+ geom[p0][1]+( geom[p1][1]- geom[p0][1])* t
 										, cellOrigin[2]+ geom[p0][2]+( geom[p1][2]- geom[p0][2])* t )),vertices.length-1 );
+							}
 // --^-^-^-^-^-^-- END  OUTPUT POINT 2 HERE --^-^-^-^-^-^--
 						}
 						if( normal ){
@@ -452,9 +690,10 @@ function meshCloud(data, dims) {
 						}
 						else {
 							// for normal, just need an accumulator to smooth shade; or to compute face normal into later
-							normal = normals[baseHere+l] = ( new THREE.Vector3(0,0,0) );
+							//normal = normals[baseHere+l] = { normalBuffer:[0,0,0], invertType:false, t:0 };
 							debug_ && (normal.adds = 0);
 						}
+						processNormals( l );
 						crosses[baseHere+l] = 1;
 						bits[baseOffset] = 1; // set any 1 bit is set here.
 					}
@@ -463,27 +702,48 @@ function meshCloud(data, dims) {
 						crosses[baseHere+l] = 0;
 					}
 				}
+
+
 				
-				function processOddNormals()
+				function processNormals(n)
 				{
-					if( crossest[baseHere +0] ) {
-						
-					}
-					if( crosses[baseHere +1] ) {
-					}
-					if( crosses[baseHere +2] ) {
-					}
-					if( crosses[baseHere +3] ) {
-					}
-					if( crosses[baseHere +4] ) {
-					}
-					if( crosses[baseHere +5] ) {
+					const here = normals[baseOffset+n];
+					if( !here ) return;
+					const pairs = normalPairs[odd][n];
+					let set = -1;
+					for( const pair of pairs ) {
+						let base = 0;
+						if( pair.set === set ) continue;
+						if( pair.x && x > 0 ) {
+							base -= (1)*9;
+						}
+						if( pair.y && y > 0 ) {
+							base -= (1*dim0)*9;
+						}
+						if( pair.z && z > 0 ) {
+							base -= (1*dim0*dim1)*9;
+						}
+						if( pair.xIn && x < (dim0-1) ) {
+							base += (1)*9;
+						}
+						if( pair.yIn && y < (dim1-1) ) {
+							base += (1*dim0)*9;
+						}
+						if( pair.zIn && z < (dim2-1) ) {
+							base += (1*dim0*dim1)*9;
+						}
+						const other = normals[baseOffset+base];
+						if( other )
+							if( (  pair.not && ( here.invertType === !other.invertType ) ) 
+							  ||( !pair.not && ( here.invertType ===  other.invertType ) ) ) {
+								set = pair.set; // skip the other pair	
+								const r = pair.f( here, other );	
+								here.q.push(r);
+							other.q.push(r);
+						}
 					}
 				}
 
-const normalPairs = [[ [ [3,4],[1,2]], [ [0,2],[3,5]], [ [0,1],[4,5]], [ [0,4],[1,5]], [ [0,3],[2,5]], [ [1,3],[2,4]] ]
-		     [],
-]
 
 				function processEvenNormals()
 				{

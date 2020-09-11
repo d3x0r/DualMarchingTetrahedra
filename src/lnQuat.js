@@ -988,7 +988,7 @@ lnQuat.prototype.up = function() {
 	return {x: c*q.nx*q.ny - s*q.nz
 		, y: c1 + c*( q.ny*q.ny )
 		, z: s*q.nx      + c*q.ny*q.nz
-
+		} 	
 
 }
 

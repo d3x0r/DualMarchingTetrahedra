@@ -7,7 +7,6 @@
 
 		<script type="module" src="./src/customShaderLoader.js"></script>
 		<script src="./src/three.js/three.min.js"></script>
-		<script src="./src/dual-quat.js"></script>
 		<!--script src="./src/TrackballControls.js"></script-->
 		<script src="./src/Detector.js"></script>
 		<script src="./src/Stats.js"></script>
@@ -22,7 +21,6 @@
 	<script src="./src/marchingtetrahedra.js"></script>
 	<script src="./src/marchingtetrahedra2.js"></script>
 	<script src="./src/marchingtetrahedra3.js"></script>
-	<script src="./src/marchingtetrahedra4.js"></script>
 	<script src="./src/dual-marching-tetrahedra-3D.js"></script>
 	<script src="./src/surfacenets.js"></script>
 
@@ -72,13 +70,15 @@
 	  </div>
 	</div>
 
-	<script type="text/javascript">
+	<script type="module">
+		import {MarchingTetrahedra4} from "./src/marchingTetrahedra4.js"
+		window.MarchingTetrahedra4 = MarchingTetrahedra4();
 		var stats, scene, renderer, composer;
-		var camera, cameraControl;
+		var camera, cameraControls;
 		var geometry, geometryNormals, surfacemesh, wiremesh, lineSegments
 		var meshers = {
 		    'Dual Marching Tetrahedra (DCL-volume)' : DualMarchingTetrahedra3
-		  , 'Marching Tetraheda 4 (DCL-volume)' : MarchingTetrahedra4
+		  , 'Marching Tetraheda 4 (DCL-volume)' : window.MarchingTetrahedra4
 		  , 'Marching Tetraheda 3 (DCL-plane)' : MarchingTetrahedra3
 		//  , 'Marching Tetraheda 2 (DCL-cell)' : MarchingTetrahedra2
 		 // , 'Marching Cubes': MarchingCubes
@@ -405,10 +405,10 @@
 				lineSegments.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
 			}
 		}
-	
-		window.doInit = ()=>{
+//		if( !window.didINit
+		//window.doInit = ()=>{
 		if( !init() )	animate();
-		}
+		//}
 		// init the scene
 		function init(){
 
