@@ -981,6 +981,7 @@ function yaw( q, th ) {
 
 lnQuat.prototype.up = function() {
 	const q = this;
+	if( q.dirty ) q.update();
 	// input angle...
 	const s = Math.sin( q.nL ); // double angle sin
 	const c1 = Math.cos( q.nL ); // sin/cos are the function of exp()
