@@ -117,6 +117,7 @@ function MarchingTetrahedra4() {
 	const linesOddMin =  [ [0,2],[0,4],[2,4],  [0,1],[1,2],[1,4]  ];
 	const linesEvenMin = [ [0,2],[0,4],[0,6],  [0,1],[0,3],[0,5]  ];
 	const linesMin = [linesEvenMin,linesOddMin];
+	const lineDiagonal = [false,false,true,false,true,true];
 
 	// this is the running center of the faces being generated - center of the cell being computed.
 	const cellOrigin = [0,0,0];
@@ -186,6 +187,310 @@ function MarchingTetrahedra4() {
 	];
 
 
+	const normalPairs = [[ [ { not : true, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b-0,y:0,z:-(0-a)} ) }
+	                         , x : true, line:3, odd:true }
+	                       , { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b-(a - 1),y:0,z:-(0-a)  } ) }
+	                         , x : true, line:4, odd:true }
+	
+	                       , { not : true, set: 1
+	                         , f(a,b) { return new lnQuat( {x:0, y:b-0, z:-(0-a)} ) }
+	                         , y : true, line:1, odd:true }
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:0, y:b-(1 - a),z:-(0-a)  } ) }
+	                         , y : true, line:2, odd:true }
+	                       ]
+	
+	                     , [ { not : true, set: 0
+	                         , f(a,b) { return new lnQuat( {x:0,y:a,z:b} ) }
+	                         , z : true, line:0, odd:true }
+	                       , { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:0,y:a-b,z:a} ) }
+	                         , z : true, line:2, odd:true }
+	
+	                       , { not : true, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:a,z:0} ) }
+	                         , x : true, line:3, odd:true }
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b-a,y:a,z:0} ) }
+	                         , x : true, line:4, odd:true }
+	                       ]
+	                     , [ { not : true, set: 0 // 2
+	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                         , x : true, line:5, odd:true }
+				// this would never exist... so it will have to only resolve on the other side
+	                       //, { not : false, set: 0
+	                       //  , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                       // , x : true, zIn:true, line:4, odd:false }
+	
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , x : true, yIn:false, line:5, odd:true }
+
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , x : true, yIn:false, line:4, odd:true }
+				
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:0 }
+	                       , { not : false, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:1 }
+	                       ]
+	
+	                     , [ { not : true, set: 0 // 3
+	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                         , z : true, line:0 }
+	
+	                       , { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, line:4 }
+	                       , { not : true, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, y:true, line:1 }
+	                       , { not : true, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, y:true, line:4 }
+	                       ]
+	
+	                     , [ { not : true, set: 0 // 4
+	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                         , z : true, yIn:true, line:5 }
+	                       , { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, xIn:true, line:2 }
+	
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, yIn:true, line:5 }
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, yIn:false, line:2 }
+				
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:1 }
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:3 }
+	                       ]
+	
+	                     , [// { not : true, set: 0 // 5
+	                        // , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                        // , y : true, zIn:true, line:4 }
+	                         { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : true, xIn:true, line:2 }
+	
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : true, yIn:false, line:2 }
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : true, yIn:false, line:4 }
+				
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:0 }
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:3 }
+	                       ]
+				]
+			     ,[ [ { not : true, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b-0,y:0,z:-(0-a)} ) }
+	                         , x : true, line:3 }
+	                       , { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b-(a - 1),y:0,z:-(0-a)  } ) }
+	                         , x : true, line:4 }
+	
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:0, y:b-0, z:-(0-a)} ) }
+	                         , y : true, line:1 }
+	                       , { not : true, set: 1
+	                         , f(a,b) { return new lnQuat( {x:0, y:b-(1 - a),z:-(0-a)  } ) }
+	                         , y : true, line:2 }
+	                       ]
+	
+	                     , [ { not : true, set: 0
+	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                         , z : true, line:0 }
+	                       , { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, line:2 }
+	
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , x : true, line:5 }
+	                       , { not : true, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , x : true, line:3 }
+	
+	                       ]
+	                     , [ { not : true, set: 0 // 2
+	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                         , x : true, line:5 }
+	                       //, { not : false, set: 0
+	                       //  , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                       //  , x : true, zIn:true, line:4 }
+	
+	                       //, { not : false, set: 1
+	                       //  , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                       //  , x : true, yIn:true, line:5 }
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , x : true, yIn:false, line:3 }
+				
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:0 }
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:1 }
+	                       ]
+	
+	                     , [ { not : true, set: 0 // 3
+	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                         , z : true, line:0 }
+	
+	                       , { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, line:4 }
+	                       , { not : true, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, y:true, line:1 }
+	
+	                       , { not : true, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, y:true, line:4 }
+	                       ]
+	
+	                     , [ { not : true, set: 0 // 4
+	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                         , z : true, yIn:true, line:5 }
+	                       , { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, xIn:true, line:2 }
+	
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, yIn:true, line:5 }
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , z : true, yIn:false, line:2 }
+				
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:1 }
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:3 }
+	                       ]
+	
+	                     , [// { not : true, set: 0 // 5
+	                       //  , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                       //  , y : true, zIn:true, line:4 }
+	                        { not : false, set: 0
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : true, xIn:true, line:2 }
+	
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : true, yIn:false, line:2 }
+	                       , { not : false, set: 1
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : true, yIn:false, line:4 }
+				
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:0 }
+	                       , { not : true, set: 2
+	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
+	                         , y : false, line:3 }
+	                       ]
+			    ],
+			]
+	const lineAxis = [ [ {from:[0,0,0] ,to:[ 0,0,1 ]}, {from:[0,0,0] ,to:[0,1,0]}, {from:[0,0,1] ,to:[ 0,1,-1 ]}, {from:[0,0,0] ,to:[ 1,0,0 ]}, {from:[1,0,0] ,to:[ -1, 1, 0 ]}, {from:[0,0,0] ,to:[ 1, 1, 0 ]} ]
+	                 , [ {from:[0,0,0] ,to:[ 0,0,1 ]}, {from:[0,0,0] ,to:[0,1,0]}, {from:[0,0,0] ,to:[ 0,1,1 ]}, {from:[0,0,0] ,to:[ 1,0,0 ]}, {from:[0,0,0] ,to:[ 1, 1, 0 ]}, {from:[0,1,0] ,to:[ 1, -1, 0 ]} ]
+			 ];
+
+	// planes 0 = x
+	// 1 = y
+	// 2 = z
+	// 3 = xy
+	// 4 = xz
+	// 5 = yz
+	
+	const pairPlanes = [ [ [ 1, 1, 0, 0], [ 2,2,0,0], [0,3,4,5,1,1], [0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]
+	                   , [ [ 1, 1, 0, 0], [ 2,2,0,0], [0,3,4,5,1,1], [0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]
+	                   ];
+				
+	updatePairs();
+	function updatePairs() {
+		for( let odd = 0; odd < 1; odd++ ){
+			const oddPairs = normalPairs[odd];
+			for( let n = 0; n < oddPairs.length; n++ ){
+				const pairArr = oddPairs[n];
+				for( let m = 0; m < pairArr.length; m++ ) {
+					const nDiag = lineDiagonal[n];
+					const mDiag = lineDiagonal[m];
+					if( pairArr[m].x ) {
+						if( pairArr[m].xIn ) throw new Error( "Can't add and sub M:", n, m );
+						else if( pairArr[m].yIn ) pairArr[m].odd = false;
+						else if( pairArr[m].zIn ) pairArr[m].odd = false;
+						else pairArr[m].odd = true;
+					} else if( pairArr[m].y ) {
+						if( pairArr[m].yIn ) throw new Error( "Can't add and sub M:", n, m );
+						else if( pairArr[m].xIn ) pairArr[m].odd = false;
+						else if( pairArr[m].zIn ) pairArr[m].odd = false;
+						else pairArr[m].odd = true;
+					} else if( pairArr[m].z ) {
+						if( pairArr[m].zIn ) throw new Error( "Can't add and sub M:", n, m );
+						else if( pairArr[m].yIn ) pairArr[m].odd = false;
+						else if( pairArr[m].xIn ) pairArr[m].odd = false;
+						else pairArr[m].odd = true;
+					} else {
+						if( pairArr[m].xIn ) pairArr[m].odd = true;
+						else if( pairArr[m].yIn ) pairArr[m].odd = true;
+						else if( pairArr[m].zIn ) pairArr[m].odd = true;
+						else pairArr[m].odd = false;
+					}
+					pairArr[m].f = ((odd,n,m,odd2)=>(a,b)=>{ const l1 = lineAxis[odd][n];
+						const l2 = lineAxis[odd2][m];
+						const line1 = [ l1.from[0]+l1.to[0]*a, l1.from[1]+l1.to[1]*a, l1.from[2]+l1.to[2]*a ];
+						const line2 = [ l2.from[0]+l2.to[0]*b, l2.from[1]+l2.to[1]*b, l2.from[2]+l2.to[2]*b ];
+						const del = [line2[0]-line1[0],line2[1]-line1[1],line2[2]-line1[2]];
+						switch( pairPlanes[odd][n][m] ) {
+						case 0:
+							return new lnQuat( {x:0,y:-del[2],z:del[1]} );
+							break;
+						case 1:
+							return new lnQuat( {x:-del[2],y:0,z:del[0]} );
+							break;
+						case 2:
+							return new lnQuat( {x:-del[1],y:del[0],z:0} );
+							break;
+						case 3:
+							// diagonals...
+							return new lnQuat( {x:-del[2],y:del[0],z:0} );
+							break;
+						case 4:
+							// diagonals...
+							return new lnQuat( {x:-del[2],y:del[0],z:0} );
+							break;
+						case 5:
+							// diagonals...
+							return new lnQuat( {x:-del[2],y:del[0],z:0} );
+							break;
+						} 
+					})(odd, n,m,odd ^ pairArr[m].odd);
+				}
+			}
+		}
+	}
+
 //----------------------------------------------------------
 //  This is the real working fucntion; the above is just
 //  static data in the function context; instance data for this function.
@@ -203,12 +508,16 @@ function MarchingTetrahedra4() {
 
 
 function meshCloud(data, dims) {
+	const Sqrt2 = 1.41421356237/2.0; // really want the 1/2 or the diagonal position...
 
 	// values input to this are in 2 planes for lower and upper values
 	const dim0 = dims[0];
 	const dim1 = dims[1];
 	const dim2 = dims[2];
 	const dataOffset = [ 0, 1, dim0, 1+dim0, 0 + dim0*dim1,1 + dim0*dim1,dim0 + dim0*dim1, 1+dim0 + dim0*dim1] ;
+
+	const d = (a)=>(a.typeInvert?1-a.typeDelta:a.typeDelta);
+
 
 	// vertex paths 0-1 0-2, 0-3  1-2 2-3 3-1
 	// this is the offset from dataOffset to the related value.
@@ -316,8 +625,8 @@ function meshCloud(data, dims) {
 	
 				cellOrigin[0] = x-dim0/2;
 				//cellOrigin[0] *= Math.PI;
-				const baseHere = (x+0 + y*dim0 + z*(dim0*dim1))*6;
-				const baseOffset = x+0 + y*dim0 + z * dim0*dim1;
+				const baseOffset = x + y*dim0 + z * dim0*dim1;
+				const baseHere = (baseOffset)*6;
 				const lineArray = linesMin[odd];
 				bits[baseOffset] = 0;
 			//if( x < 3 || x >3  ) continue;
@@ -396,10 +705,12 @@ function meshCloud(data, dims) {
 								}
 								points[baseHere+l] = normal.id;
 							}
-							else
+							else {
+								normal = { typeInvert : true, typeDelta: t,normalBuffer:new THREE.Vector3( ) }
 								points[baseHere+l] = (vertices.push(new THREE.Vector3(cellOrigin[0]+ geom[p1][0]+( geom[p0][0]- geom[p1][0])* t
 								           , cellOrigin[1]+ geom[p1][1]+( geom[p0][1]- geom[p1][1])* t
 								           , cellOrigin[2]+ geom[p1][2]+( geom[p0][2]- geom[p1][2])* t )),vertices.length-1);
+							}
 // --^-^-^-^-^-^-- END OUTPUT POINT(VERTEX) HERE --^-^-^-^-^-^--
 						} else {
 							(t = -d/(e-d));
@@ -438,10 +749,20 @@ function meshCloud(data, dims) {
 								}
 								points[baseHere+l] = normal.id;
 							}
-							else
+							else {
+/*
+        let result = {
+            id:this.used++,
+            normalBuffer:this.normal.subarray(u3,u3+3),
+            vertBuffer:this.position.subarray(u3,u3+3),
+		type1:type1, type2:type2, typeDelta:typeDelta, typeInvert:invert// saved just as meta for later
+        }
+*/
+								normal = { typeInvert : true, typeDelta: t,normalBuffer:new THREE.Vector3( ) }
 								points[baseHere+l] =( vertices.push(new THREE.Vector3(cellOrigin[0]+ geom[p0][0]+( geom[p1][0]- geom[p0][0])* t
 										, cellOrigin[1]+ geom[p0][1]+( geom[p1][1]- geom[p0][1])* t
 										, cellOrigin[2]+ geom[p0][2]+( geom[p1][2]- geom[p0][2])* t )),vertices.length-1 );
+							}
 // --^-^-^-^-^-^-- END  OUTPUT POINT 2 HERE --^-^-^-^-^-^--
 						}
 						if( normal ){
@@ -452,9 +773,10 @@ function meshCloud(data, dims) {
 						}
 						else {
 							// for normal, just need an accumulator to smooth shade; or to compute face normal into later
-							normal = normals[baseHere+l] = ( new THREE.Vector3(0,0,0) );
+							//normal = normals[baseHere+l] = { normalBuffer:[0,0,0], invertType:false, t:0 };
 							debug_ && (normal.adds = 0);
 						}
+						processNormals( l );
 						crosses[baseHere+l] = 1;
 						bits[baseOffset] = 1; // set any 1 bit is set here.
 					}
@@ -463,351 +785,76 @@ function meshCloud(data, dims) {
 						crosses[baseHere+l] = 0;
 					}
 				}
+
+
 				
-				function processOddNormals()
+				function processNormals(n)
 				{
-					if( crossest[baseHere +0] ) {
-						
+					const here = normals[baseHere+n];
+					if( !here ){ 
+						throw new Error( "called without a normal?")
+						return;
 					}
-					if( crosses[baseHere +1] ) {
-					}
-					if( crosses[baseHere +2] ) {
-					}
-					if( crosses[baseHere +3] ) {
-					}
-					if( crosses[baseHere +4] ) {
-					}
-					if( crosses[baseHere +5] ) {
+					const pairs = normalPairs[odd][n];
+					let set = -1;
+					for( const pair of pairs ) {
+						let base = 0;
+						if( pair.set === set ) {
+							//console.log( "Already added the other line of this.", set );
+							continue;
+						}
+						if( pair.x && x > 0 ) {
+							base -= (1)*6;
+							if( pair.yIn && y < (dim1-1) ) {
+								throw new Error( "THis isn't a valid pairi" );
+								base += (1*dim0)*6;
+							}
+							else if( pair.zIn && z < (dim2-1) ) {
+								throw new Error( "THis isn't a valid pairi" );
+								base += (1*dim0*dim1)*6;
+							}
+						}
+						if( pair.y && y > 0 ) {
+							base -= (1*dim0)*6;
+							if( pair.xIn && x < (dim0-1) ) {
+								base += (1)*6;
+							}
+							else if( pair.zIn && z < (dim2-1) ) {
+								throw new Error( "THis isn't a valid pairi" );
+								base += (1*dim0*dim1)*6;
+							}
+						}
+						if( pair.z && z > 0 ) {
+							base -= (1*dim0*dim1)*6;
+							if( pair.xIn && x < (dim0-1) ) {
+								base += (1)*6;
+							}
+							else if( pair.yIn && y < (dim1-1) ) {
+								base += (1*dim0)*6;
+							}
+						}
+
+						if( base >= 6 ) {
+							//console.log( "don't look at things in the future", base, baseHere );
+							continue;
+						}
+						const other = normals[baseOffset+base + pair.line];
+						if( other )
+							if( 1|| (  pair.not && ( here.invertType === !other.invertType ) ) 
+							  ||( !pair.not && ( here.invertType ===  other.invertType ) ) ) {
+								set = pair.set; // skip the other pair	
+								const A = d(here)  * (lineDiagonal[n]         ?Sqrt2:1.0);
+								const B = d(other) * (lineDiagonal[pair.line] ?Sqrt2:1.0);
+								const r = pair.f( A, B );
+								here.q.push(r);
+								other.q.push(r);
+							}
+							//else;
+						//else
+						//	console.log( "No other normal at", base, pair.line );
 					}
 				}
 
-const normalPairs = [[ [ [3,4],[1,2]], [ [0,2],[3,5]], [ [0,1],[4,5]], [ [0,4],[1,5]], [ [0,3],[2,5]], [ [1,3],[2,4]] ],
-		     [],
-]
-
-				function processEvenNormals()
-				{
-					let chk; 
-					if( crosses[baseHere +0] ) {
-						const here = normals[baseHere+0];
-						if( x > 0 ) {
-							
-							if( chk = normals[baseHere + 3 + (-1)*9 ]) { // flat left
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-							if( chk = normals[baseHere + 4 + (-1)*9 ]) {
-								if( here.typeInvert == chk.typeInvert ) {
-									// this is a diagonal.
-									push( new lnQuat( {x:chk.t, y:0, z:here.t - chk.t } ) );
-								}
-							}
-						}
-						if( chk = normals[baseHere + 3 ]) {// flat in-cell
-								if( here.typeInvert == chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-						}
-						if( chk = normals[baseHere + 4 ]) { // flat in-cell
-								if( here.typeInvert == !chk.typeInvert ) {
-									// this is a diagonal.
-									push( new lnQuat( {x:chk.t, y:0, z:here.t - chk.t } ) );
-								}
-						}
-
-
-						if( y > 0 ) {
-							if( chk = normals[baseHere + 1 + (-1*dim0)*9 ]) { // vertical down
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-							if( chk = normals[baseHere + 2 + (-1*dim0)*9 ]) {
-								// diagonal.
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-						}
-
-						if( chk = normals[baseHere + 1 ]) { // vertical
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-						}
-						if( chk = normals[baseHere + 2 ]) { // vertical
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-						}
-						
-					}
-		
-					if( crosses[baseHere +1] ) {
-						// /*0, */  3, -y+0, -x+3   5 -x 5  2 -y2
-						const here = normals[baseHere+1];
-						if( z > 0 ) {
-							if( chk = normals[baseHere+0 + (-1*dim0*dim1)*9] ) {
-								if( here.typeInvert === !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-							if( chk = normals[baseHere+2 + (-1*dim0*dim1)*9] ) {
-								if( here.typeInvert === chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-						}
-						if( x > 0 ) {
-							
-							if( chk = normals[baseHere+5 + (-1)*9] ) {
-								if( here.typeInvert === chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-							if( chk = normals[baseHere+3 + (-1)*9] ) {
-								if( here.typeInvert === !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-						}
-
-						// +0 is already checked above in-cell.
-						if( chk = normals[baseHere+2] ) {
-							if( here.typeInvert === chk.typeInvert ) {
-								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-							}
-						}
-
-						if( chk = normals[baseHere+3] ) {
-							if( here.typeInvert === chk.typeInvert ) {
-								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-							}
-						}
-						if( chk = normals[baseHere+5] ) {
-							if( here.typeInvert === chk.typeInvert ) {
-								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-							}
-						}
-						
-					}
-					if( crosses[baseHere +2] ) {
-						// /*0,*/ 4, /*1,*/  5, -x4, /* +z1, +y0 +z3 no data, resolved later */
-						const here = normals[baseHere+2];
-						if( x > 0 ) {
-							if( chk = normals[baseHere+4 + (-1)*9] ) {
-								if( here.typeInvert === chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-						} 
-						if( chk = normals[baseHere+4] ) {
-							if( here.typeInvert === chk.typeInvert ) {
-								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-							}
-						}
-						if( chk = normals[baseHere+5] ) {
-							if( here.typeInvert === chk.typeInvert ) {
-								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-							}
-						}
-						
-					}
-					if( crosses[baseHere +3] ) {
-						//  /*0, 1*/, 5, 4, 
-						const here = normals[baseHere+3];
-						if( y > 0 ) {
-							if( chk = normals[baseHere + 1 + (-1*dim0)*9 ]) { // vertical down
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-							if( chk = normals[baseHere + 5 + (-1*dim0)*9 ]) { // vertical down
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-						}
-						if( z > 0 ) {
-							if( chk = normals[baseHere+0 + (-1*dim0*dim1)*9] ) {
-								if( here.typeInvert === !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-						}
-					
-						if( chk = normals[baseHere+4] ) {
-							if( here.typeInvert === chk.typeInvert ) {
-								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-							}
-						}
-
-						if( chk = normals[baseHere+5] ) {
-							if( here.typeInvert === chk.typeInvert ) {
-								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-							}
-						}
-					}
-					if( crosses[baseHere +4] ) {
-						const here = normals[baseHere+4];
-						if(y > 0 ) {
-							if( chk = normals[baseHere + 2 + (-1*dim0)*9 ]) { // vertical down
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-							if( chk = normals[baseHere + 5 + (-1*dim0)*9 ]) { // vertical down
-								if( here.typeInvert == !chk.typeInvert ) {
-									push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-								}
-							}
-						}
-						if( chk = normals[baseHere+5] ) {
-							if( here.typeInvert === chk.typeInvert ) {
-								push( new lnQuat( {x:chk.t, y:0, z:here.t } ) );
-							}
-						}
-					}
-					function push(q) {	
-						here.q.push(q);
-						chk.q.push(q);
-					}
-				}
-			}
-		}
-	}
-
-if(0)
-	for( var z = 0; z < dim2; z++ ) {
-	
-		let odd = 0;
-		let zOdd = z & 1;
-
-		// for all bounday crossed points, generate the faces from the intersection points.
-		for( var y = 0; y < dim1; y++ ) {
-			for( var x = 0; x < dim0; x++ ) {
-				var tetSkip = 0;
-				const baseOffset = (x + (y*dim0) + z*dim0*dim1)*6;
-				if( !bits[baseOffset] ) {
-					// if nothing in x, x+1, y+1, just 1 bit in forward right wouldn't be enough.
-					if( !bits[baseOffset + 1] && !bits[baseOffset + dim0] && !bits[baseOffset + dim0*dim1] ) {
-							//console.log( "Skip:", (x+1)+y*dim0, x, y, z );
-							//continue;
-					}
-				}
-
-				if( x >= (dim0-1)) tetSkip |= 1;
-				if( y >= (dim1-1)) tetSkip |= 2;
-				if( z >= (dim2-1)) tetSkip |= 4;
-				const dataOffset = x + (y*dim0) + z*dim1*dim0;
-	        		odd = (( x + y ) &1) ^ zOdd;
-				for( let n = 0; n < 9; n++ ) {
-					//if( tetMasks[odd][tet] & tetSkip ) continue;
-
-					let f;
-					let invert = 0;
-					let useFace = 0;
-					let idx;
-					// this is 'valid combinations' check.
-					if( crosses[ baseOffset+n ] ) {
-						const here = normals[baseOffset+n];
-						if( here.typeInvert ) {
-							// outside is from 2 to 0
-						} else {
-							// outside is from 0 to 2
-							
-						}
-						switch(n) {
-							case 0:								
-								if( odd ) {
-									if( x > 0 ) {
-										if( crosses[idx = baseOffset + 4 (-1)*9] ) {
-											const n2 = normals[idx];
-											if( n2.typeInvert ) {
-												// this is from 1 to 0
-												if( here.typeInvert ) { 
-												} else { 
-												}
-											}else {
-												// this is from 0 to 1
-												if( here.typeInvert ) { } 
-												else { 
-												}
-											}
-											
-										}
-								        
-										if( crosses[idx = baseOffset + 4 (-1)*9] ) {
-											const n2 = normals[idx];
-											if( n2.typeInvert ) {
-												// this is from 1 to 0
-												if( here.typeInvert ) { 
-												} else { 
-												}
-											}else {
-												// this is from 0 to 1
-												if( here.typeInvert ) { } 
-												else { 
-												}
-											}
-											
-										}
-										
-									}
-								} else {
-					
-								}
-								if( crosses[idx = baseOffset + 3] ) {
-									
-								}
-						}
-						//console.log( `Output: odd:${odd} tet:${tet} x:${x} y:${y} a:${JSON.stringify(a)}` );
-						if( crosses[ baseOffset+edgeToComp[odd][tet][1] ] ) {
-							if( crosses[ baseOffset+edgeToComp[odd][tet][2] ] ) {
-								// lower left tet. // source point is 0
-								useFace = 1;
-								invert = ( data[dataOffset+vertToData[odd][tet][0]] >= 0 )?1:0;
-							} else {
-								if( crosses[ baseOffset+edgeToComp[odd][tet][4] ] && crosses[ baseOffset+edgeToComp[odd][tet][5] ]) {
-									// source point is 2? 1?   (0?3?)
-									useFace = 2;
-									invert = ( data[dataOffset+vertToData[odd][tet][0]] >= 0 )?1:0 ;
-								}
-							}
-						} else {
-							if( crosses[ baseOffset+edgeToComp[odd][tet][2]] && crosses[ baseOffset+edgeToComp[odd][tet][3]] && crosses[ baseOffset+edgeToComp[odd][tet][4] ] ) {
-								// source point is ? 1? 3?   (0? 2?)
-								useFace = 3;
-								invert = ( data[dataOffset+vertToData[odd][tet][0]] >= 0 )?1:0  ;
-							}else if( crosses[ baseOffset+edgeToComp[odd][tet][3]] && crosses[ baseOffset+edgeToComp[odd][tet][5] ] ) {
-								// source point is 1
-								useFace = 4;
-								invert = ( data[dataOffset+vertToData[odd][tet][1]] >= 0 )?1:0
-							}
-						}
-					} else {
-						if( crosses[ baseOffset+edgeToComp[odd][tet][1] ] ) {
-							if( crosses[ baseOffset+edgeToComp[odd][tet][2] ] && crosses[ baseOffset+edgeToComp[odd][tet][3] ] && crosses[ baseOffset+edgeToComp[odd][tet][5] ]) {
-								// 0?1?   2?3?
-								useFace = 5;
-								invert = ( data[dataOffset+vertToData[odd][tet][0]] >= 0 )  ?1:0
-							} else if( crosses[ baseOffset+edgeToComp[odd][tet][3]] && crosses[ baseOffset+edgeToComp[odd][tet][4] ] ) {
-								// source point is 2
-								useFace = 6;
-								invert = ( data[dataOffset+vertToData[odd][tet][2]] >= 0 ) ?1:0
-							}
-						} else {
-							if( crosses[ baseOffset+edgeToComp[odd][tet][2] ] && crosses[ baseOffset+edgeToComp[odd][tet][4]] && crosses[ baseOffset+edgeToComp[odd][tet][5] ] ) {
-								// source point is 3
-								useFace = 7;
-								invert = ( data[dataOffset+vertToData[odd][tet][3]] >= 0 ) ?1:0
-							} else {
-							}
-						}
-					}
-					//if( useFace > 5 || useFace < 5 ) continue;
-				}
 			}
 		}
 	}
@@ -1042,66 +1089,30 @@ if(0)
 
 								}else{
 									// in this mode, normals is just a THREEE.vector3.
+
 									faces.push( f = new THREE.Face3( points[ai], points[bi], points[ci]
-												,[normals[ai],normals[bi],normals[ci]] )
+												,[normals[ai].normalBuffer,normals[bi].normalBuffer,normals[ci].normalBuffer] )
 									);
-
-									const vA = vertices[f.a];
-									const vB = vertices[f.b];
-									const vC = vertices[f.c];
-									if( ( vA.x === vB.x && vA.x === vC.x )
-									   && ( vA.y === vB.y && vA.y === vC.y )
-									   && ( vA.z === vB.z && vA.z === vC.z ) ) {
-										//console.log( "zero size tri-face")
-									   continue;
-									}
-									//if( !vA || !vB || !vC ) debugger;
-									v_cb.subVectors(vC, vB);
-									v_ab.subVectors(vA, vB);
-									v_cb.cross(v_ab);
-							
-									if( v_cb.length() > 0.000001 ){
-										// try a cross from a different side.
-									}
-									v_cb.normalize();
-
-									{
-										v_a1t.subVectors(vC,vB);
-										v_a2t.subVectors(vA,vB);
-										let angle = 0;
-										if( v_a1t.length() && v_a2t.length() )
-											angle = v_a1t.angleTo( v_a2t );
-										v_normTmp.copy(v_cb).multiplyScalar(angle);
-										normals[bi].add( v_normTmp );
-									}
-	
-									{
-										v_a1t.subVectors(vB,vA);
-										v_a2t.subVectors(vC,vA);
-										let angle = 0;
-										if( v_a1t.length() > 0 && v_a2t.length()>0 ){
-											angle = v_a1t.angleTo( v_a2t );
+									for( let i of [ai,bi,ci] ) {
+										let n;
+										const Q = normals[i].q[0];
+										if( Q)  {
+											for( n = 1; n < normals[i].q.length;n++ ) {
+												Q.add( normals[i].q[n] );
+											}
+											Q.x /= n;
+											Q.y /= n;
+											Q.z /= n;
+											//if( n < 4 ) { console.log ( "only 2 quats...", normals[i] ) }
+											const up = Q.up();
+											normals[i].normalBuffer.x = up.x;
+											normals[i].normalBuffer.y = up.y;
+											normals[i].normalBuffer.z = up.z;
+										}else {
+											normals[i].normalBuffer.z = 0.1;
+											normals[i].normalBuffer.y = 0.1;
+											normals[i].normalBuffer.x = 0.1;
 										}
-										v_normTmp.copy(v_cb).multiplyScalar(angle);
-										normals[ai].add( v_normTmp );
-									}
-							
-									v_cb.subVectors(vA, vC);
-									v_ab.subVectors(vB, vC);
-									v_cb.cross(v_ab);
-	
-									if( v_cb.length() > 0.000001 ) {
-										v_cb.normalize();
-										v_a1t.subVectors(vA,vC);
-										v_a2t.subVectors(vB,vC);
-										let angle = 0;
-										if( v_a1t.length() > 0 && v_a2t.length()>0 ){
-											angle = v_a1t.angleTo( v_a2t );
-										}
-										v_cb.multiplyScalar(angle);
-	
-										v_normTmp.copy(v_cb).multiplyScalar(angle);
-										normals[ci].add( v_normTmp );
 									}
 								}
 							} else {

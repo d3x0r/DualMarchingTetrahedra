@@ -7,7 +7,6 @@
 
 		<script type="module" src="./src/customShaderLoader.js"></script>
 		<script src="./src/three.js/three.min.js"></script>
-		<script src="./src/dual-quat.js"></script>
 		<!--script src="./src/TrackballControls.js"></script-->
 		<script src="./src/Detector.js"></script>
 		<script src="./src/Stats.js"></script>
@@ -22,10 +21,6 @@
 	<script src="./src/marchingtetrahedra.js"></script>
 	<script src="./src/marchingtetrahedra2.js"></script>
 	<script src="./src/marchingtetrahedra3.js"></script>
-	<!--script type="module" src="./src/marchingtetrahedra4.js"></script-->
-	<script type="module">
-	</script>
-
 	<script src="./src/dual-marching-tetrahedra-3D.js"></script>
 	<script src="./src/surfacenets.js"></script>
 
@@ -79,7 +74,7 @@
 		import {MarchingTetrahedra4} from "./src/marchingtetrahedra4.js"
 		window.MarchingTetrahedra4 = MarchingTetrahedra4();
 		var stats, scene, renderer, composer;
-		var camera, cameraControl;
+		var camera, cameraControls;
 		var geometry, geometryNormals, surfacemesh, wiremesh, lineSegments
 		var meshers = {
 		    'Marching Tetraheda 4 (DCL-volume)' : MarchingTetrahedra4()
@@ -410,10 +405,7 @@
 				lineSegments.position.z = surfacemesh.position.z = -(bb.max.z + bb.min.z) / 2.0;
 			}
 		}
-		let cameraControls;
-		window.doInit = ()=>{
 		if( !init() )	animate();
-		}
 		// init the scene
 		function init(){
 

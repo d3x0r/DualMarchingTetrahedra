@@ -819,6 +819,20 @@ function yaw( q, th ) {
 	return finishRodrigues( q, 0, ax, ay, az, th );
 }
 
+lnQuat.prototype.up = function() {
+	const q = this;
+	if( q.dirty ) q.update();
+	// input angle...
+	const s = Math.sin( q.nL ); // double angle sin
+	const c1 = Math.cos( q.nL ); // sin/cos are the function of exp()
+	const c = 1- c1;
+	return {x: c*q.nx*q.ny - s*q.nz
+		, y: c1 + c*( q.ny*q.ny )
+		, z: s*q.nx      + c*q.ny*q.nz
+		} 	
+
+}
+
 // rotate the passed vector 'from' this space
 lnQuat.prototype.sub2 = function( q ) {
 	const qRes = new lnQuat(this.w, this.x, this.y, this.z).addConj( q );
