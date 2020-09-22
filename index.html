@@ -8,6 +8,7 @@
 		<script type="module" src="./src/customShaderLoader.js"></script>
 		<script src="./src/three.js/three.min.js"></script>
 		<!--script src="./src/TrackballControls.js"></script-->
+
 		<script src="./src/Detector.js"></script>
 		<script src="./src/Stats.js"></script>
 
@@ -72,13 +73,14 @@
 
 	<script type="module">
 		import {MarchingTetrahedra4} from "./src/marchingTetrahedra4.js"
+		import  "./src/three.js/TrackballControls.js";
 		window.MarchingTetrahedra4 = MarchingTetrahedra4();
 		var stats, scene, renderer, composer;
 		var camera, cameraControls;
 		var geometry, geometryNormals, surfacemesh, wiremesh, lineSegments
 		var meshers = {
-		    'Dual Marching Tetrahedra (DCL-volume)' : DualMarchingTetrahedra3
-		  , 'Marching Tetraheda 4 (DCL-volume)' : window.MarchingTetrahedra4
+		    'Marching Tetraheda 4 (DCL-volume)' : window.MarchingTetrahedra4
+		  , 'Dual Marching Tetrahedra (DCL-volume)' : DualMarchingTetrahedra3
 		  , 'Marching Tetraheda 3 (DCL-plane)' : MarchingTetrahedra3
 		//  , 'Marching Tetraheda 2 (DCL-cell)' : MarchingTetrahedra2
 		 // , 'Marching Cubes': MarchingCubes
