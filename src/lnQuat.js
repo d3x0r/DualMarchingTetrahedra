@@ -823,8 +823,8 @@ lnQuat.prototype.up = function() {
 	const q = this;
 	if( q.dirty ) q.update();
 	// input angle...
-	const s = Math.sin( q.nL ); // double angle sin
-	const c1 = Math.cos( q.nL ); // sin/cos are the function of exp()
+	const s = Math.sin( q.θ ); // double angle sin
+	const c1 = Math.cos( q.θ ); // sin/cos are the function of exp()
 	const c = 1- c1;
 	return {x: c*q.nx*q.ny - s*q.nz
 		, y: c1 + c*( q.ny*q.ny )

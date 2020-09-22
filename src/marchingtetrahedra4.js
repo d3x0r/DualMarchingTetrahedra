@@ -800,7 +800,7 @@ function meshCloud(data, dims) {
 					for( const pair of pairs ) {
 						let base = 0;
 						if( pair.set === set ) {
-							//console.log( "Already added the other line of this.", set );
+							console.log( "Already added the other line of this.", set, n, baseHere );
 							continue;
 						}
 						if( pair.x && x > 0 ) {
@@ -835,13 +835,13 @@ function meshCloud(data, dims) {
 						}
 
 						if( base >= 6 ) {
-							//console.log( "don't look at things in the future", base, baseHere );
+							console.log( "don't look at things in the future", base, baseHere );
 							continue;
 						}
 						const other = normals[baseOffset+base + pair.line];
 						if( other )
-							if( 1|| (  pair.not && ( here.invertType === !other.invertType ) ) 
-							  ||( !pair.not && ( here.invertType ===  other.invertType ) ) ) {
+							if( 1|| (  pair.not && ( here.typeInvert === !other.typeInvert ) ) 
+							  ||( !pair.not && ( here.typeInvert ===  other.typeInvert ) ) ) {
 								set = pair.set; // skip the other pair	
 								const A = d(here)  * (lineDiagonal[n]         ?Sqrt2:1.0);
 								const B = d(other) * (lineDiagonal[pair.line] ?Sqrt2:1.0);
@@ -1103,12 +1103,14 @@ function meshCloud(data, dims) {
 											Q.x /= n;
 											Q.y /= n;
 											Q.z /= n;
-											//if( n < 4 ) { console.log ( "only 2 quats...", normals[i] ) }
+											if( n < 4 ) { console.log ( "only 2 quats...", normals[i] ) }
 											const up = Q.up();
+									console.log( "use:", up );
 											normals[i].normalBuffer.x = up.x;
 											normals[i].normalBuffer.y = up.y;
 											normals[i].normalBuffer.z = up.z;
 										}else {
+											//console.log( "no quats" );
 											normals[i].normalBuffer.z = 0.1;
 											normals[i].normalBuffer.y = 0.1;
 											normals[i].normalBuffer.x = 0.1;
