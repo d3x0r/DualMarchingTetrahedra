@@ -1105,12 +1105,12 @@ function meshCloud(data, dims) {
 											Q.z /= n;
 											if( n < 4 ) { console.log ( "only 2 quats...", normals[i] ) }
 											const up = Q.up();
-									console.log( "use:", up );
+									//console.log( "use:", up );
 											normals[i].normalBuffer.x = up.x;
 											normals[i].normalBuffer.y = up.y;
 											normals[i].normalBuffer.z = up.z;
 										}else {
-											//console.log( "no quats" );
+											console.log( "no quats" );
 											normals[i].normalBuffer.z = 0.1;
 											normals[i].normalBuffer.y = 0.1;
 											normals[i].normalBuffer.x = 0.1;
