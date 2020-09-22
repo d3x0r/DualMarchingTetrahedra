@@ -8,6 +8,7 @@
 		<script type="module" src="./src/customShaderLoader.js"></script>
 		<script src="./src/three.js/three.min.js"></script>
 		<!--script src="./src/TrackballControls.js"></script-->
+
 		<script src="./src/Detector.js"></script>
 		<script src="./src/Stats.js"></script>
 
@@ -72,6 +73,7 @@
 
 	<script type="module">
 		import {MarchingTetrahedra4} from "./src/marchingtetrahedra4.js"
+		import  "./src/three.js/TrackballControls.js";
 		window.MarchingTetrahedra4 = MarchingTetrahedra4();
 		var stats, scene, renderer, composer;
 		var camera, cameraControls;
