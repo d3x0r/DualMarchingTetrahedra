@@ -869,7 +869,7 @@ function QuatPathing(q, v, c) {
 
 
 function DrawQuatPaths(q) {
-
+/*
 			let lnQX = document.getElementById( "lnQX" ).value;
 			let lnQY = document.getElementById( "lnQY" ).value;
 			let lnQZ = document.getElementById( "lnQZ" ).value;
@@ -886,6 +886,7 @@ function DrawQuatPaths(q) {
 	QuatPathing( lnQ, xAxis, cx );
 	QuatPathing( lnQ, yAxis, cy );
 	QuatPathing( lnQ, zAxis, cz );
+*/
 }
 
 

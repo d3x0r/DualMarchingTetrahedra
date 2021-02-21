@@ -85,7 +85,7 @@ this is the vertex references on the right, and which 'vert N' applies.
 
 */
 
-import {lnQuat} from "./lnQuat.js"
+import {lnQuat} from "./lnQuatSq.js"
 
 function MarchingTetrahedra4() {
 	// static working buffers
@@ -846,6 +846,7 @@ function meshCloud(data, dims) {
 								const A = d(here)  * (lineDiagonal[n]         ?Sqrt2:1.0);
 								const B = d(other) * (lineDiagonal[pair.line] ?Sqrt2:1.0);
 								const r = pair.f( A, B );
+
 								here.q.push(r);
 								other.q.push(r);
 							}
@@ -859,7 +860,7 @@ function meshCloud(data, dims) {
 		}
 	}
 
-
+let count = 0;
 
 	for( var z = 0; z < dim2; z++ ) {
 	
@@ -1090,9 +1091,140 @@ function meshCloud(data, dims) {
 								}else{
 									// in this mode, normals is just a THREEE.vector3.
 
+									const vvA = vertices[points[ai]];
+									const vvB = vertices[points[bi]];
+									const vvC = vertices[points[ci]];
+									// a - b - c    c->b a->b
+									const vA = [vvA.x,vvA.y,vvA.z];
+									const vB = [vvB.x,vvB.y,vvB.z];
+									const vC = [vvC.x,vvC.y,vvC.z];
+									let v1, v2, v3;
+									const AisB =  ( ( vA[0] === vB[0] ) && ( vA[1] === vB[1]  ) && ( vA[2] === vB[2]  ) );
+									const AisC =  ( ( vA[0] === vC[0] ) && ( vA[1] === vC[1]  ) && ( vA[2] === vC[2]  ) );
+									const BisC =  ( ( vB[0] === vC[0] ) && ( vB[1] === vC[1]  ) && ( vB[2] === vC[2]  ) );
+									if( AisB || BisC || AisC ) {
+									   //console.log( "zero size tri-face")
+									   continue;
+									}
+									{
+										v1 = vC;
+										v2 = vB;
+										v3 = vA;
+									}
+									if( AisC ) {
+										v1 = vB;
+										v2 = vC;
+										v3 = vA;
+									}
+									if( BisC ) {
+										v1 = vA;
+										v2 = vC;
+										v3 = vB;
+									}
+
+									//if( !vA || !vB || !vC ) debugger;
+									fnorm[0] = v2[0]-v1[0];fnorm[1] = v2[1]-v1[1];fnorm[2] = v2[2]-v1[2];
+									tmp[0] = v3[0]-v1[0];tmp[1] = v3[1]-v1[1];tmp[2] = v3[2]-v1[2];
+									let a=fnorm[0], b=fnorm[1];
+									fnorm[0]=fnorm[1]*tmp[2] - fnorm[2]*tmp[1];
+									fnorm[1]=fnorm[2]*tmp[0] - a       *tmp[2];
+									fnorm[2]=a       *tmp[1] - b       *tmp[0];
+									let ds;
+									if( (ds=fnorm[0]*fnorm[0]+fnorm[1]*fnorm[1]+fnorm[2]*fnorm[2]) > 0.00000001 ){
+										ds = 1/Math.sqrt(ds);
+										fnorm[0] *= ds;fnorm[1] *= ds;fnorm[2] *= ds;
+									}else {
+										//console.log( "1Still not happy...", fnorm, ds,vA, vB, vC );
+										// b->A  c->A
+										fnorm[0] = vB[0]-vA[0];fnorm[1] = vB[1]-vA[1];fnorm[2] = vB[2]-vA[2];
+										tmp[0] = vC[0]-vA[0];tmp[1] = vC[1]-vA[1];tmp[2] = vC[2]-vA[2];
+										let a=fnorm[0];
+										fnorm[0]=fnorm[1]*tmp[2] - fnorm[2]*tmp[1];
+										fnorm[1]=fnorm[2]*tmp[0] - a       *tmp[2];
+										fnorm[2]=a       *tmp[1] - b       *tmp[0];
+										let ds2;
+										if( (ds2=fnorm[0]*fnorm[0]+fnorm[1]*fnorm[1]+fnorm[2]*fnorm[2]) > 0.00000001 ){
+											ds2 = -1/Math.sqrt(ds2);
+											fnorm[0] *= ds2;fnorm[1] *= ds2;fnorm[2] *= ds2;
+										} else {
+											//console.log( "2Still not happy...", ds2, vA, vB, vC );
+											// B->C  A->C
+											fnorm[0] = vA[0]-vC[0];fnorm[1] = vA[1]-vC[1];fnorm[2] = vA[2]-vC[2];
+											tmp[0] = vB[0]-vC[0];tmp[1] = vB[1]-vC[1];tmp[2] = vB[2]-vC[2];
+											let a=fnorm[0];
+											fnorm[0]=fnorm[1]*tmp[2] - fnorm[2]*tmp[1];
+											fnorm[1]=fnorm[2]*tmp[0] - a       *tmp[2];
+											fnorm[2]=a       *tmp[1] - b       *tmp[0];
+											let ds3;
+											if( (ds3=fnorm[0]*fnorm[0]+fnorm[1]*fnorm[1]+fnorm[2]*fnorm[2]) > 0.00000001 ){
+												ds3 = -1/Math.sqrt(ds3);
+												fnorm[0] *= ds3;fnorm[1] *= ds3;fnorm[2] *= ds3;
+											} 
+											//else 
+											//	console.log( "3Still not happy...", ds, vA, vB, vC );
+										}
+									}
+	                        fnorm[0] = -fnorm[0];
+	                        fnorm[1] = -fnorm[1];
+	                        fnorm[2] = -fnorm[2];
+									{
+										a1t[0]=vB[0]-vA[0];a1t[1]=vB[1]-vA[1];a1t[2]=vB[2]-vA[2];
+										a2t[0]=vC[0]-vA[0];a2t[1]=vC[1]-vA[1];a2t[2]=vC[2]-vA[2];
+
+										let angle = 0;
+										if( (a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2] ) >0.00000001 && 
+										    (a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) >0.00000001 )
+											angle = 2*Math.acos( clamp((a1t[0]*a2t[0]+a1t[1]*a2t[1]+a1t[2]*a2t[2])/(Math.sqrt(a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2])*Math.sqrt(a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) ), 1.0 ));
+										normals[ai].normalBuffer.x += fnorm[0]*angle;
+										normals[ai].normalBuffer.y += fnorm[1]*angle;
+										normals[ai].normalBuffer.z += fnorm[2]*angle;
+									}
+
+									{
+										a1t[0]=vC[0]-vB[0];a1t[1]=vC[1]-vB[1];a1t[2]=vC[2]-vB[2];
+										a2t[0]=vA[0]-vB[0];a2t[1]=vA[1]-vB[1];a2t[2]=vA[2]-vB[2];
+										let angle = 0;
+										if( (a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2] ) >0.00000001 && 
+										    (a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) >0.00000001 ) {
+												angle = 2*Math.acos( clamp((a1t[0]*a2t[0]+a1t[1]*a2t[1]+a1t[2]*a2t[2])/(Math.sqrt(a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2])*Math.sqrt(a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) ), 1.0) );
+										}
+
+										normals[bi].normalBuffer.x += fnorm[0]*angle;
+										normals[bi].normalBuffer.y += fnorm[1]*angle;
+										normals[bi].normalBuffer.z += fnorm[2]*angle;
+									}
+
+									{
+										a1t[0]=vA[0]-vC[0];a1t[1]=vA[1]-vC[1];a1t[2]=vA[2]-vC[2];
+										a2t[0]=vB[0]-vC[0];a2t[1]=vB[1]-vC[1];a2t[2]=vB[2]-vC[2];
+
+										let angle = 0;
+										if( (a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2] ) >0.00000001 && 
+											(a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) >0.00000001 )
+											angle = 2*Math.acos( clamp((a1t[0]*a2t[0]+a1t[1]*a2t[1]+a1t[2]*a2t[2])/(Math.sqrt(a1t[0]*a1t[0]+a1t[1]*a1t[1]+a1t[2]*a1t[2])*Math.sqrt(a2t[0]*a2t[0]+a2t[1]*a2t[1]+a2t[2]*a2t[2] ) ), 1.0) );
+										normals[ci].normalBuffer.x += fnorm[0]*angle;
+										normals[ci].normalBuffer.y += fnorm[1]*angle;
+										normals[ci].normalBuffer.z += fnorm[2]*angle;
+									}
+									debug_ && normals[ai].adds++;
+									debug_ && normals[bi].adds++;
+									debug_ && normals[ci].adds++;
+									if( isNaN(normals[ci].normalBuffer.x) || isNaN(normals[ci].normalBuffer.y) || isNaN(normals[ci].normalBuffer.z) )debugger;
+									if( isNaN(normals[bi].normalBuffer.x) || isNaN(normals[bi].normalBuffer.y) || isNaN(normals[bi].normalBuffer.z) )debugger;
+									if( isNaN(normals[ai].normalBuffer.x) || isNaN(normals[ai].normalBuffer.y) || isNaN(normals[ai].normalBuffer.z) )debugger;
+									
+									if( debug_ && normals[ci].adds >= 3 &&  !normals[ci].normalBuffer.x && !normals[ci].normalBuffer.y && !normals[ci].normalBuffer.z ){ console.log( "zero normal:", ci, normals[ci], normals[ci].normalBuffer, normals[ci].vertBuffer );}//debugger;
+									if( debug_ && normals[bi].adds >= 3 &&  !normals[bi].normalBuffer.x && !normals[bi].normalBuffer.y && !normals[bi].normalBuffer.z ){ console.log( "zero normal:", ci, normals[ci], normals[ci].normalBuffer, normals[ci].vertBuffer );}//debugger;
+									if( debug_ && normals[ai].adds >= 3 &&  !normals[ai].normalBuffer.x && !normals[ai].normalBuffer.y && !normals[ai].normalBuffer.z ){ console.log( "zero normal:", ci, normals[ci], normals[ci].normalBuffer, normals[ci].vertBuffer );}//debugger;
+
+
+									//console.log( "vertices", tet, useFace, tri, "odd:",odd, "invert:", invert, "pos:", x, y, z, "dels:", normals[ai].typeDelta, normals[bi].typeDelta, normals[ci].typeDelta, "a:", normals[ai].invert, normals[ai].type1, normals[ai].type2, "b:", normals[bi].invert, normals[bi].type1, normals[bi].type2, "c:", normals[ci].invert, normals[ci].type1, normals[ci].type2 );
+
+
 									faces.push( f = new THREE.Face3( points[ai], points[bi], points[ci]
 												,[normals[ai].normalBuffer,normals[bi].normalBuffer,normals[ci].normalBuffer] )
 									);
+/*
 									for( let i of [ai,bi,ci] ) {
 										let n;
 										const Q = normals[i].q[0];
@@ -1109,11 +1241,13 @@ function meshCloud(data, dims) {
 											normals[i].normalBuffer.y = up.y;
 											normals[i].normalBuffer.z = up.z;
 										}else {
+											count++;
 											normals[i].normalBuffer.z = 0.1;
 											normals[i].normalBuffer.y = 0.1;
 											normals[i].normalBuffer.x = 0.1;
 										}
 									}
+*/
 								}
 							} else {
 								if( opts.geometryHelper )	{
@@ -1170,6 +1304,7 @@ function meshCloud(data, dims) {
 		}
 	}
 
+console.log( "Skipped normals?", count );
 	// update geometry (could wait for index.html to do this?
 	if( showGrid )
 		opts.geometryHelper.markDirty();
