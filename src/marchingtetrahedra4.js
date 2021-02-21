@@ -214,11 +214,11 @@ function MarchingTetrahedra4() {
 	                         , x : true, line:3, odd:true }
 	                       , { not : false, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b-a,y:a,z:0} ) }
-	                         , x : true, line:4, odd:true }
-	                       ]
-	                     , [ { not : true, set: 0 // 2
-	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
 	                         , x : true, line:5, odd:true }
+	                       ]
+	                     , [// { not : true, set: 0 // 2
+	                        // , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                        // , x : true, line:5, odd:true }
 				// this would never exist... so it will have to only resolve on the other side
 	                       //, { not : false, set: 0
 	                       //  , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
@@ -227,7 +227,6 @@ function MarchingTetrahedra4() {
 	                       , { not : false, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
 	                         , x : true, yIn:false, line:5, odd:true }
-
 	                       , { not : false, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
 	                         , x : true, yIn:false, line:4, odd:true }
@@ -243,31 +242,31 @@ function MarchingTetrahedra4() {
 	                     , [ { not : true, set: 0 // 3
 	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
 	                         , z : true, line:0 }
-	
 	                       , { not : false, set: 0
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
 	                         , z : true, line:4 }
+
 	                       , { not : true, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
 	                         , z : true, y:true, line:1 }
 	                       , { not : true, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , z : true, y:true, line:4 }
+	                         , z : true, y:true, line:5 }
 	                       ]
 	
 	                     , [ { not : true, set: 0 // 4
 	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
-	                         , z : true, yIn:true, line:5 }
+	                         , y : true, zIn:true, line:5 }
 	                       , { not : false, set: 0
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , z : true, xIn:true, line:2 }
+	                         , y : true, xIn:true, line:2 }
 	
 	                       , { not : false, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , z : true, yIn:true, line:5 }
+	                         , y : true, zIn:flase, line:5 }
 	                       , { not : false, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , z : true, yIn:false, line:2 }
+	                         , y : true, yIn:false, line:2 }
 				
 	                       , { not : true, set: 2
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
@@ -277,23 +276,23 @@ function MarchingTetrahedra4() {
 	                         , y : false, line:3 }
 	                       ]
 	
-	                     , [// { not : true, set: 0 // 5
-	                        // , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
-	                        // , y : true, zIn:true, line:4 }
+	                     ,  { not : true, set: 0 // 5
+	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
+	                         , z : true, zIn:false, line:4 }
 	                         { not : false, set: 0
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , y : true, xIn:true, line:2 }
+	                         , z : true, xIn:false, line:2 }
 	
 	                       , { not : false, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , y : true, yIn:false, line:2 }
+	                         , y : false, yIn:false, line:2 }
 	                       , { not : false, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , y : true, yIn:false, line:4 }
+	                         , y : false, yIn:false, line:4 }
 				
 	                       , { not : true, set: 2
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , y : false, line:0 }
+	                         , y : false, line:1 }
 	                       , { not : true, set: 2
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
 	                         , y : false, line:3 }
@@ -308,15 +307,16 @@ function MarchingTetrahedra4() {
 	
 	                       , { not : false, set: 1
 	                         , f(a,b) { return new lnQuat( {x:0, y:b-0, z:-(0-a)} ) }
-	                         , y : true, line:1 }
+	                         , y : true, zIn:true, line:1 }
 	                       , { not : true, set: 1
 	                         , f(a,b) { return new lnQuat( {x:0, y:b-(1 - a),z:-(0-a)  } ) }
 	                         , y : true, line:2 }
 	                       ]
 	
-	                     , [ { not : true, set: 0
+	                     , [ // neither of these triangles have existing tops...  
+                                /*{ not : true, set: 0
 	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
-	                         , z : true, line:0 }
+	                         , z : true, yIn:true, line:0 }
 	                       , { not : false, set: 0
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
 	                         , z : true, line:2 }
@@ -326,10 +326,10 @@ function MarchingTetrahedra4() {
 	                         , x : true, line:5 }
 	                       , { not : true, set: 1
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
-	                         , x : true, line:3 }
-	
+	                         , x : true, yIn:true, line:3 }
+	                         */
 	                       ]
-	                     , [ { not : true, set: 0 // 2
+	                     , [/* { not : true, set: 0 // 2
 	                         , f(a,b) { return new lnQuat( {x:a,y:0,z:b} ) }
 	                         , x : true, line:5 }
 	                       //, { not : false, set: 0
@@ -349,6 +349,7 @@ function MarchingTetrahedra4() {
 	                       , { not : true, set: 2
 	                         , f(a,b) { return new lnQuat( {x:b,y:0,z:a} ) }
 	                         , y : false, line:1 }
+				*/
 	                       ]
 	
 	                     , [ { not : true, set: 0 // 3
@@ -800,7 +801,7 @@ function meshCloud(data, dims) {
 					for( const pair of pairs ) {
 						let base = 0;
 						if( pair.set === set ) {
-							//console.log( "Already added the other line of this.", set );
+							console.log( "Already added the other line of this.", set, n, baseHere );
 							continue;
 						}
 						if( pair.x && x > 0 ) {
@@ -835,13 +836,13 @@ function meshCloud(data, dims) {
 						}
 
 						if( base >= 6 ) {
-							//console.log( "don't look at things in the future", base, baseHere );
+							console.log( "don't look at things in the future", base, baseHere );
 							continue;
 						}
 						const other = normals[baseOffset+base + pair.line];
 						if( other )
-							if( 1|| (  pair.not && ( here.invertType === !other.invertType ) ) 
-							  ||( !pair.not && ( here.invertType ===  other.invertType ) ) ) {
+							if( 1|| (  pair.not && ( here.typeInvert === !other.typeInvert ) ) 
+							  ||( !pair.not && ( here.typeInvert ===  other.typeInvert ) ) ) {
 								set = pair.set; // skip the other pair	
 								const A = d(here)  * (lineDiagonal[n]         ?Sqrt2:1.0);
 								const B = d(other) * (lineDiagonal[pair.line] ?Sqrt2:1.0);
@@ -1235,8 +1236,9 @@ let count = 0;
 											Q.x /= n;
 											Q.y /= n;
 											Q.z /= n;
-											//if( n < 4 ) { console.log ( "only 2 quats...", normals[i] ) }
+											if( n < 4 ) { console.log ( "only 2 quats...", normals[i] ) }
 											const up = Q.up();
+									//console.log( "use:", up );
 											normals[i].normalBuffer.x = up.x;
 											normals[i].normalBuffer.y = up.y;
 											normals[i].normalBuffer.z = up.z;
