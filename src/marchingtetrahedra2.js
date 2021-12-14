@@ -33,9 +33,48 @@ var MarchingTetrahedra2 = (function() {
 
 const _debug = false;
 
+const geom = [
+	[0,0,0],  // bottom layer
+        [1,0,0],
+        [0,1,0],
+        [1,1,0],
+        [0,0,1],  // 5 top layer
+        [1,0,1],   // 6
+        [0,1,1],   // 7
+        [1,1,1],   // 8
+]
+
+const tetTable = [ [
+	[ 1,0,5,3 ],
+	[ 2,3,6,0 ],
+	[ 4,5,0,6 ],
+	[ 7,3,5,6 ],
+	[ 0,6,5,3 ],
+]
+
+,[
+	[ 0,2,4,1 ],
+	[ 3,1,7,2 ],
+	[ 5,7,1,4 ],
+	[ 6,7,4,2 ],
+	[ 4,7,1,2 ],
+] ]
+
+const v = [0,0,0,0];
+const g = [null,null,null,null];
+
+const values = [[-1,-1,-1,-1],[-1,-1,-1,-1]];
+
+const cellOrigin = [0,0,0];
+
+
 return function(data, dims, opts) {
 	opts = opts || { maximize:false,minimize:false,inflation:0};
-   var vertices = []
+	const dim0 = dims[0];	
+	const dim1 = dims[1];	
+	const dim01 = dim0*dim1;
+	const dim2 = dims[2];	
+   const vertices = []
     , faces = [];
 
 
@@ -49,7 +88,6 @@ return function(data, dims, opts) {
       3  (inverted)
 */
 
-const cellOrigin = [0,0,0];
 
 function e2(p) {
 	faces.push(p);
@@ -223,98 +261,30 @@ function tetCompute( values, geometry, invert ) {
         } 
 }
 
-// values input to this are in 2 planes for lower and upper values
-
-const geom = [
-	[0,0,0],  // bottom layer
-        [1,0,0],
-        [0,1,0],
-        [1,1,0],
-        [0,0,1],  // 5 top layer
-        [1,0,1],   // 6
-        [0,1,1],   // 7
-        [1,1,1],   // 8
-]
-
-
-
-const tetTable = [
-	[ 0,2,4,1 ],
-	[ 3,1,7,2 ],
-	[ 5,7,1,4 ],
-	[ 6,7,4,2 ],
-	[ 4,7,1,2 ],
-]
-
-// 0-5 5-3 
-// 3-6 6-0
-
-const tetTable2 = [
-	[ 1,0,5,3 ],
-	[ 2,3,6,0 ],
-	[ 4,5,0,6 ],
-	[ 7,3,5,6 ],
-	[ 0,6,5,3 ],
-]
-
-function cellCompute( alt, values, geom ) {
-
-	_debug && showValues( values );
-	_debug && console.log( "Our local state:", values, tets );
-
-	let v = [0,0,0,0];
-	let g = [null,null,null,null];
-	let n = 0;
-	if( alt ) {
-		for( let tet of tetTable ) {
-			v[0] = values[tet[0]>>2][tet[0]%4];
-			v[1] = values[tet[1]>>2][tet[1]%4];
-			v[2] = values[tet[2]>>2][tet[2]%4];
-			v[3] = values[tet[3]>>2][tet[3]%4];
-			g[0] = geom[tet[0]];
-			g[1] = geom[tet[1]];
-			g[2] = geom[tet[2]];
-			g[3] = geom[tet[3]];
-	        	tetCompute( v, g, false );
-		}
-	} else {
-		for( let tet of tetTable2 ) {
-			v[0] = values[tet[0]>>2][tet[0]%4];
-			v[1] = values[tet[1]>>2][tet[1]%4];
-			v[2] = values[tet[2]>>2][tet[2]%4];
-			v[3] = values[tet[3]>>2][tet[3]%4];
-			g[0] = geom[tet[0]];
-			g[1] = geom[tet[1]];
-			g[2] = geom[tet[2]];
-			g[3] = geom[tet[3]];
-	        	tetCompute( v, g, false );
-		}
-	}
-}
-
-
-	const values = [[-1,-1,-1,-1],[-1,-1,-1,-1]];
-	for( let x = -1; x < dims[0]; x++ ) {
+	for( let x = 0; x < dim0; x++ ) {
 		cellOrigin[0] = x;
-		for( let y = -1; y < dims[1]; y++ ) {
+		for( let y = 0; y < dim1; y++ ) {
 			cellOrigin[1] = y;
-			for( let z = 0; z < dims[2]; z++ ) {
+			for( let z = 0; z < dim2; z++ ) {
 				cellOrigin[2] = z;
 				const tmp = values[0]; // swap rows
 				values[0] = values[1];
 				values[1] = tmp;
 				
-				values[1][0] = ( x < 0 )         ?-1: (0-data[ z * dims[0]*dims[1] + (y+0) * dims[0] + (x+0) ]);
-				values[1][1] = ( x >= dims[0]-1 )?-1: (0-data[ z * dims[0]*dims[1] + (y+0) * dims[0] + (x+1) ]);
+				values[1][0] = -data[ z * dim01 + (y+0) * dim0 + (x+0) ];
+				values[1][1] = -data[ z * dim01 + (y+0) * dim0 + (x+1) ];
 
-				if(y  < dims[1]-1 ) {
-					values[1][2] = ( x < 0 )?-1: (0-data[ z * dims[0]*dims[1] + (y+1) * dims[0] + (x+0) ]);
-					values[1][3] = ( x >= dims[0]-1 )?-1:( 0-data[ z * dims[0]*dims[1] + (y+1) * dims[0] + (x+1) ] );
-				} else {
-					values[1][2] = -1;
-					values[1][3] = -1;
+				values[1][2] = -data[ z * dim01 + (y+1) * dim0 + (x+0) ];
+				values[1][3] = -data[ z * dim01 + (y+1) * dim0 + (x+1) ];
+
+				const alt = (x+y+z)&1;
+				for( let tet of tetTable[alt] ) {
+					for( let i = 0; i < 4; i++ ) {
+						v[i] = values[tet[i]>>2][tet[i]%4];
+						g[i] = geom[tet[i]];
+					}
+					tetCompute( v, g, false );
 				}
-				cellCompute( (x+y+z)&1, values, geom );
 			}
 		}
 	}
