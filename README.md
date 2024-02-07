@@ -39,12 +39,12 @@ This is the other edge-on view...
 
 See also
 
-(this Demo) Testing framework: https://d3x0r.github.io/IsoSurface-MultiTexture
+(this Demo) Testing framework: https://d3x0r.github.io/DualMarchingTetrahedra/
 
 Original Testing framework : http://mikolalysenko.github.io/Isosurface/  https://github.com/mikolalysenko/isosurface.git
 
 
-Prior Updated Testing framework: https://d3x0r.github.io/MarchingTetrahedra/
+Prior Updated Testing framework: https://d3x0r.github.io/IsoSurface-MultiTexture
 
 
 see also https://en.wikipedia.org/wiki/Marching_tetrahedra
