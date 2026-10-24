@@ -233,7 +233,7 @@ const drawCubesIntersects = false;
 			  inTets : [0],
 			  ofs : 0,
 			  edge:1,
-			  nextNear :[ { ofs1:-2, ofs2:-4, edge:[0,16] } ],  // edges
+			  nextNear :[ { ofs1:-1, ofs2:-2, edge:[0,16] } ],  // edges
 			  near:[ // edge=1
 				{ dir:-1, tet:3, tfrm:0, tetEdge:1 }, 
 				{ dir:-2, tet:0, tfrm:0, tetEdge:1 }, 
@@ -241,7 +241,7 @@ const drawCubesIntersects = false;
 			  inTets : [0],
 			  ofs : 0,
 			  edge:2,
-			  nextNear :[ { ofs1:-2, ofs2:-1, edge:[0,17] } ],  // edges
+			  nextNear :[ { ofs1:-2, ofs2:-4, edge:[0,17] } ],  // edges
 			  near:[ // edge=2
 				//here{ dir: 0, tet:0, tfrm:0 }, 
 				{ dir:-2, tet:0, tfrm:0, tetEdge:2 }, 
@@ -419,7 +419,7 @@ const drawCubesIntersects = false;
 			  inTets : [1],
 			  ofs : 0,
 			  edge:1,
-			  nextNear :[ { ofs1:-2, ofs2:-4, edge:[1,16] } ],  // edges
+			  nextNear :[ { ofs1:-1, ofs2:-2, edge:[1,16] } ],  // edges
 			  near:[ // edge=1
 				//self{ dir: 0, tet:0, tfrm:0 }, 
 				{ dir:-1, tet:2, tfrm:1, tetEdge:2 }, 
@@ -429,7 +429,7 @@ const drawCubesIntersects = false;
 			  inTets : [3],
 			  ofs : 0,
 			  edge:2,
-			  nextNear :[ { ofs1:-2, ofs2:-1, edge:[1,17] } ],  // edges
+			  nextNear :[ { ofs1:-2, ofs2:-4, edge:[1,17] } ],  // edges
 			  near:[ // edge=2
 				//here{ dir: 0, tet:0, tfrm:0 }, 
 				{ dir:-4, tet:2, tfrm:3, tetEdge:1 }, 
@@ -622,8 +622,44 @@ for( let o of tetNearMap )
 						e.checkDirs.push( tet.dir );
 					}
 			} else {
-				e.checkDirs.push( tet.dir );				
+				e.checkDirs.push( tet.dir );
 			}
+		}
+	}
+
+	// For the cell's own 6 edges, give each tet around the edge a plain cell
+	// delta [dx,dy,dz], and sort the ring by angle around the edge (A->B,
+	// right handed) so emitSquare/emitHex can fan it in order.  The table
+	// order is not cyclic (the square ring was here, diagonal, side, side).
+	{
+		const dirDelta = (d)=>{
+			if( !d ) return [0,0,0];
+			if( "number" !== typeof d ) {
+				const a = dirDelta( d[0] ), b = dirDelta( d[1] );
+				return [a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+			}
+			const s = Math.sign(d), m = Math.abs(d);
+			return [ (m&1)?s:0, (m&2)?s:0, (m&4)?s:0 ];
+		};
+		for( let odd = 0; odd < 2; odd++ ) for( let edge = 0; edge < 6; edge++ ) {
+			const e = tetNearMap[odd][edge];
+			const A = geom[linesMin[odd][e.edge][0]], B = geom[linesMin[odd][e.edge][1]];
+			const ax = [B[0]-A[0],B[1]-A[1],B[2]-A[2]];
+			// any vector not along the edge, made perpendicular; then v = ax x u
+			let u = Math.abs(ax[0]) < 0.5 ? [1,0,0] : [0,1,0];
+			const al = (ax[0]*ax[0]+ax[1]*ax[1]+ax[2]*ax[2]);
+			const ud = (u[0]*ax[0]+u[1]*ax[1]+u[2]*ax[2])/al;
+			u = [u[0]-ax[0]*ud, u[1]-ax[1]*ud, u[2]-ax[2]*ud];
+			const v = [ax[1]*u[2]-ax[2]*u[1], ax[2]*u[0]-ax[0]*u[2], ax[0]*u[1]-ax[1]*u[0]];
+			e.ring = e.useTets.map( t=>{
+				const d = dirDelta( t.dir );
+				const tOdd = (odd + d[0] + d[1] + d[2]) & 1;
+				const c = [0,0,0];
+				for( let corner of vertToDataOrig[tOdd][t.tet] )
+					for( let i = 0; i < 3; i++ ) c[i] += (d[i] + geom[corner][i] - A[i])/4;
+				const angle = Math.atan2( c[0]*v[0]+c[1]*v[1]+c[2]*v[2], c[0]*u[0]+c[1]*u[1]+c[2]*u[2] );
+				return { d:d, tet:t.tet, angle:angle };
+			} ).sort( (a,b)=>a.angle-b.angle );
 		}
 	}
 
@@ -1263,7 +1299,7 @@ function computeEdges( x, y, z ) {
 	// if nothing, mark as an 'error' so later if(!bits[]) won't call this function
 	if( !bits_ ) bits_ = 0b1000_0000_0000_0000;
 	else
-		console.log( "ComputedEdges:", x, y,z  );
+		;//console.log( "ComputedEdges:", x, y,z  );
 
 	// if checking the return value it only wants to know if any; not if error.
 	return (bits[baseOffset] = bits_)&0x3F; // just 6 bits is the value of this computation.
@@ -1468,7 +1504,7 @@ function computeAllEdges( x, y, z ) {
 	}
 
 
-	function emitHex(offset,p, dir, cIndx) {
+	function emitHex(p, offset, cIndx) {
 	
 		const n= [0,0,0];//p[0].n.slice(0,3);
 		const pn = p[0].n;					
@@ -1490,7 +1526,7 @@ function computeAllEdges( x, y, z ) {
 		n[2] /= 6;
 
 		
-		const psh = pointStateHolder[ points[(offset + dataOffset[dir]) *6 + cIndx ] ];
+		const psh = pointStateHolder[ points[offset*6 + cIndx] ];
 		if( !psh ) {
 			//console.log( "edge is bad..." );
 			return;
@@ -1589,7 +1625,7 @@ function computeAllEdges( x, y, z ) {
 
 	}
 
-	function emitSquare(p, offset, dir, edge) {
+	function emitSquare(p, offset, edge) {
 
 		const n= [0,0,0];//p[0].n.slice(0,3);
 		const pnsrc = p[0].n;					
@@ -1624,7 +1660,7 @@ function computeAllEdges( x, y, z ) {
 		n[1] /= 4;
 		n[2] /= 4;
 		const up = lnQA.set( 0, n[0],n[1],n[2]).update().up();
-		const psh = pointStateHolder[ points[(offset + dataOffset[dir]) *6 + edge ] ];
+		const psh = pointStateHolder[ points[offset*6 + edge] ];
 
 		if( !psh ) {
 			console.log( "edge is bad..." );
@@ -1659,7 +1695,10 @@ function computeAllEdges( x, y, z ) {
 		const vp3 = addPoint( p[3] );
 		const fold = getFold( up, vp0.p, vp1.p, vp2.p, vp3.p );
 		//_debug_output && console.log( "S?" );
-		if( psh && psh.invert  ) {
+		// the ring is ordered around the edge the same way for squares and
+		// hexes; this matches emitHex (was "psh.invert", which turned every
+		// axis-edge square inside out).
+		if( !psh.invert ) {
 			//console.log( "sq face 1", dir, edge, faces.length)
 			//return;
 			if(1) {
@@ -1749,10 +1788,10 @@ function computeAllEdges( x, y, z ) {
 	function efQueue(x,y,z,e) {
 		if( x < 0 || y < 0 || z < 0 || x >= dim0 || y >= dim1 || z >= dim2 ) return;
 		const offset = (x + (y*dim0) + z*dim0*dim1);
-		if( !edge_visited[offset]) {
+		if( !(edge_visited[offset] & (1<<e)) ) {
 			const tag = {x:x,y:y,z:z,e:e};
 			ef_queue.push( tag );
-			edge_visited[offset] = 1;
+			edge_visited[offset] |= 1<<e;
 			return tag;
 		}
 	}
@@ -2043,133 +2082,42 @@ function computeAllEdges( x, y, z ) {
 
 
 	function followEdge() {
-		const p = [null,null,null,null,null,null];
+		const p4 = [null,null,null,null];
+		const p6 = [null,null,null,null,null,null];
 		if( ef_queue.length === 0 ) 
 			return false;
 		let x, y, z, e;
 		while( (ef_queue.length>0 ) ) {
 			({x,y,z,e} = ef_queue.shift());
 			const offset = (x + (y*dim0) + z*dim0*dim1);
-			const baseOffset = offset*5;
 			const odd = (x+y+z)&1;
 
-			const edge = tetNearMap[odd][e];
+			// the tets around this (sign-change) edge, in order around it.
+			const ring = tetNearMap[odd][e].ring;
+			const p = ring.length === 4 ? p4 : p6;
 			let failed = false;
-			for( let dir of edge.checkDirs ) {
-				if( dir ) {		
-					let is = false;		
-					console.log( "Check near cubes before processing this edge...", dir );
-					if( "number" === typeof dir ) {
-						switch( dir ) {
-						default: console.log( "Unhandled direction(1):", dir ); break;
-						case  1:is=processCube( x+1, y, z ); break;
-						case  2:is=processCube( x, y+1, z ); break;
-						case  4:is=processCube( x, y, z+1 ); break;
-						case -1:is=processCube( x-1, y, z ); break;
-						case -2:is=processCube( x, y-1, z ); break;
-						case -4:is=processCube( x, y, z-1 ); break;
-						}
-					} else {
-						let xofs,yofs,zofs;
-						switch( dir[0] ) {
-						default: console.log( "Unhandled direction(1):", dir ); break;
-						case  1:xofs=1; break;
-						case  2:yofs=1; break;
-						case  4:zofs=1; break;
-						case -1:xofs=-1; break;
-						case -2:yofs=-1; break;
-						case -4:zofs=-1; break;
-						}
-						switch( dir[1] ) {
-						default: console.log( "Unhandled direction(1):", dir ); break;
-						case  1:xofs=1; break;
-						case  2:yofs=1; break;
-						case  4:zofs=1; break;
-						case -1:xofs=-1; break;
-						case -2:yofs=-1; break;
-						case -4:zofs=-1; break;
-						}
-						is=processCube( x + xofs, y + yofs, z + zofs );
-					}
-					if( !is ) {
-						failed = true;
-						console.log( "Incomplete information; maybe this fell off the edge?", x, y, z, e, dir );
-						break;
-					}
-				}		
+			for( let r = 0; r < ring.length; r++ ) {
+				const d = ring[r].d;
+				const cx = x+d[0], cy = y+d[1], cz = z+d[2];
+				if( cx < 0 || cy < 0 || cz < 0 || cx >= dim0 || cy >= dim1 || cz >= dim2
+				   || !processCube( cx, cy, cz ) ) {
+					// fell off the edge of the data; can't close this polygon.
+					failed = true;
+					break;
+				}
+				p[r] = normals[(cx + cy*dim0 + cz*dim0*dim1)*5 + ring[r].tet];
+				if( !p[r] ) {
+					// every tet with a sign-change edge has a dual point; this is a table/logic error.
+					console.log( "Missing tet point around edge:", x, y, z, e, d, ring[r].tet );
+					failed = true;
+					break;
+				}
 			}
 			if( failed ) continue; // can't emit the face for this...
-			if( edge.edge < 3 ) {
-				let d;
-				// this point is always 'here'
-				p[0] = normals[baseOffset+edge.useTets[0].tet];
-				// this dir is an array
-				{
-					let ds = edge.useTets[1].dir;
-					if( ds[0] < 0 )
-						if( ds[1] < 0 ) 
-							p[1] = normals[baseOffset-tetOffset[-ds[1]]-tetOffset[-ds[0]] +edge.useTets[1].tet ];
-						else
-							p[1] = normals[baseOffset+tetOffset[ds[1]]-tetOffset[-ds[0]] +edge.useTets[1].tet];
-					else
-						if( ds[1] < 0 ) 
-							p[1] = normals[baseOffset-tetOffset[-ds[1]]+tetOffset[ds[0]] +edge.useTets[1].tet];
-						else
-							p[1] = normals[baseOffset+tetOffset[ds[1]]+tetOffset[ds[0]] +edge.useTets[1].tet];
-				}
-				if( (d=edge.useTets[2].dir) < 0 )
-					p[2] = normals[baseOffset-tetOffset[-d]+edge.useTets[2].tet];
-				else
-					p[2] = normals[baseOffset+tetOffset[d]+edge.useTets[2].tet];
-				if( (d=edge.useTets[3].dir) < 0 )
-					p[3] = normals[baseOffset+tetOffset[-d]+edge.useTets[3].tet];
-				else 
-					p[3] = normals[baseOffset+tetOffset[d]+edge.useTets[3].tet];
-				emitSquare( offset, p, d, e );
-				
-				const edges0 = faceMetric[odd][p[0].tet][p[0].face];
-				const edges1 = faceMetric[odd][p[1].tet][p[1].face];
-				const edges2 = faceMetric[odd][p[2].tet][p[2].face];
-				const edges3 = faceMetric[odd][p[3].tet][p[3].face];
-				//p[0].tet][
-
-			} else {
-				const edgeTets = edge.useTets;
-				let nearofs;
-				p[0] = normals[baseOffset+edgeTets[0].tet];
-				p[1] = normals[baseOffset+edgeTets[1].tet];
-				p[2] = normals[baseOffset+edgeTets[2].tet];
-				if( edgeTets[3].dir < 0 ) {
-					nearofs = -tetOffset[-edgeTets[3].dir];
-				} else {
-					nearofs = tetOffset[edgeTets[3].dir];
-				}
-				p[3] = normals[baseOffset+nearofs+edgeTets[3].tet];
-				p[4] = normals[baseOffset+nearofs+edgeTets[4].tet];
-				p[5] = normals[baseOffset+nearofs+edgeTets[5].tet];
-				emitHex( offset, p, nearofs, e );
-
-			/*
-				const edges = [faceMetric[odd][p[0].tet][p[0].face]
-					, faceMetric[odd][p[1].tet][p[1].face]
-					, faceMetric[odd][p[2].tet][p[2].face]
-					, faceMetric[odd][p[3].tet][p[3].face]
-					, faceMetric[odd][p[4].tet][p[4].face]
-					, faceMetric[odd][p[5].tet][p[5].face]
-					];
-				const nextSteps = [];
-				for( let e2 of edges ) {
-					// e2 will have 0 or 2 entries
-					for( let e3 of e2 ) {
-						for( let e4 of e3 ) {
-							if( e4.edge === edge ) continue; // skip my own edge.
-							nextSteps.push( e4 );
-						}
-					}
-				}
-				console.log( "Next Steps is queued?", nextSteps );
-			*/
-			}
+			if( ring.length === 4 )
+				emitSquare( p, offset, e );
+			else
+				emitHex( p, offset, e );
 		}
 
 	}
@@ -2632,7 +2580,9 @@ function computeAllEdges( x, y, z ) {
 	}
 	//return vertices;
 
-	return followNewFace;
+	// geometry went to opts.geometryHelper (like -3D.js); returning the
+	// followNewFace continuation made index.html read result.vertices.
+	//return followNewFace;
 }
 
 }
