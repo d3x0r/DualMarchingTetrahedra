@@ -24,6 +24,7 @@
 	<script src="./src/marchingtetrahedra3.js"></script>
 	<script src="./src/marchingtetrahedra4.js"></script>
 	<script src="./src/dual-marching-tetrahedra-3D.js"></script>
+	<script src="./src/dual-marching-tetrahedra-brute.js"></script>
 	<script src="./src/surfacenets.js"></script>
 
 	<script src="./src/perlinnoise.js"></script>
@@ -78,9 +79,10 @@
 		var geometry, geometryNormals, surfacemesh, wiremesh, lineSegments
 		var meshers = {
 		    'Dual Marching Tetrahedra (DCL-volume)' : DualMarchingTetrahedra3
+		  , 'DMT Brute Force (reference)' : DualMarchingTetrahedraBrute
 		  , 'Marching Tetraheda 4 (DCL-volume)' : MarchingTetrahedra4
 		  , 'Marching Tetraheda 3 (DCL-plane)' : MarchingTetrahedra3
-		//  , 'Marching Tetraheda 2 (DCL-cell)' : MarchingTetrahedra2
+		  , 'Marching Tetraheda 2 (DCL-cell)' : MarchingTetrahedra2
 		 // , 'Marching Cubes': MarchingCubes
 		 // , 'Marching Tetraheda' : MarchingTetrahedra
 		//	,  'Naive Surface Nets': SurfaceNets
@@ -200,6 +202,9 @@
 		  smoothShade : document.getElementById( "smoothShade" ).checked,
 		  showGrid : document.getElementById( "showGrid").checked,
 		  geometryHelper : geometryHelper,
+	          fill:document.getElementById("fillOutside").checked?-1
+			          :document.getElementById("fillInside").checked?1
+			          :0
 		} );
 	  var end = (new Date()).getTime();
 
@@ -215,7 +220,12 @@
 									, null, null // texture, and uv[1,0] 
 									 , [0xA0,0x00,0xA0,255] // edge color
 									 , [0x11, 0x11, 0x11, 255] // face color
-									 , [0,0,0] // normal *needs to be updated*;
+									 // Per-vertex normal.  With smooth shading the face
+									 // normal passed to addFace is null, and copyPoint
+									 // then lets every duplicated corner inherit THIS
+									 // value -- which is how MarchingTetrahedra4 gets
+									 // smooth normals through the grid shader.
+									 , (result.normals && result.normals[i]) || [0,0,0]
 									 , 100 // pow
 									 , false // use texture
 									 , false // flat
@@ -223,6 +233,10 @@
 									 , [result.vertices[i][0]+0.125,result.vertices[i][1]+0.125,result.vertices[i][2]+0.125]  // modulous of this point.
 								);
 			}
+			const faceTypes = [0,0,0,0,0,0];      // types1[3] then types2[3]
+			const faceTypeDelta = [0,0,0];
+			const meshTypes1 = result.types1, meshTypes2 = result.types2
+			    , meshDeltas = result.deltas;
 			const cb = new THREE.Vector3(), ab = new THREE.Vector3();
 			for(var i=0; i<result.faces.length; ++i) {
 				const f = result.faces[i];
@@ -251,7 +265,37 @@
 				}
 				norm[0] *= 1/Math.sqrt(ds);norm[1] *= 1/Math.sqrt(ds);norm[2] *= 1/Math.sqrt(ds);
 
-				geometryHelper.addFace( f[0], f[1],f[2], norm);
+				// GridGeometryBuffer.addFace is (a,b,c, n, i, types, deltaTypes)
+				// and copyPoint() dereferences types/deltaTypes the first time
+				// each point is touched -- passing only 4 args threw
+				// "Cannot read properties of undefined" in copyPoint.
+				//
+				// types is [t1a,t1b,t1c, t2a,t2b,t2c] and deltaTypes is
+				// [da,db,dc]: each corner's own element pair and blend.  That
+				// per-corner triple is what the shader mixes across the
+				// triangle via the barycentric 'simplex' attribute, so a mesher
+				// that reports one element with zero delta renders unblended.
+				if( meshTypes1 ) {
+					// The six slots are INTERLEAVED PER CORNER, not grouped by
+					// type.  The fragment shader reads them as
+					//   corner A : types1.x blended with types1.y  by delta.x
+					//   corner B : types1.z blended with types2.x  by delta.y
+					//   corner C : types2.y blended with types2.z  by delta.z
+					// and copyPoint splits t[0..2] into types1 and t[3..5] into
+					// types2.  So the order is A1,A2, B1,B2, C1,C2 -- grouping
+					// them as A1,B1,C1,A2,B2,C2 blends each corner against the
+					// NEXT corner's material, which speckles.
+					faceTypes[0] = meshTypes1[f[0]]; faceTypes[1] = meshTypes2[f[0]];
+					faceTypes[2] = meshTypes1[f[1]]; faceTypes[3] = meshTypes2[f[1]];
+					faceTypes[4] = meshTypes1[f[2]]; faceTypes[5] = meshTypes2[f[2]];
+					faceTypeDelta[0] = meshDeltas[f[0]];
+					faceTypeDelta[1] = meshDeltas[f[1]];
+					faceTypeDelta[2] = meshDeltas[f[2]];
+				}
+				// null face normal => each corner keeps its own addPoint normal
+				// (smooth).  A real face normal overwrites all three (flat).
+				const faceNormal = ( opts.smoothShade && result.normals ) ? null : norm;
+				geometryHelper.addFace( f[0], f[1], f[2], faceNormal, false, faceTypes, faceTypeDelta );
 			}
 			geometryHelper.markDirty();
 			document.getElementById("vertcount").value = geometryHelper.used;
@@ -264,10 +308,22 @@
 				geometry.vertices.push(new THREE.Vector3(v[0], v[1], v[2]));
 			}
 
+			// If the mesher supplied per-vertex normals (DMT Brute does, from
+			// the field gradient), use them.  Recomputing normals per face
+			// here is what makes a face blemish wherever a sample sits exactly
+			// at 0 -- the triangle there has no area and no usable direction.
+			var meshNormals = result.normals && result.normals.length === result.vertices.length
+				? result.normals.map( function(n){ return new THREE.Vector3(n[0],n[1],n[2]); } )
+				: null;
+
 			for(var i=0; i<result.faces.length; ++i) {
 				var f = result.faces[i];
 				if(f.length === 3) {
-					geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]));
+					if( meshNormals )
+						geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]
+							, [meshNormals[f[0]], meshNormals[f[1]], meshNormals[f[2]]] ));
+					else
+						geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]));
 				} else if(f.length === 4) {
 					geometry.faces.push(new THREE.Face4(f[0], f[1], f[2], f[3]));
 				} else {

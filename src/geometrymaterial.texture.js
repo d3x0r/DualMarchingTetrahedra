@@ -16,11 +16,29 @@ function GeometryMaterial() {
 	    textureMap3 : { type:"t", value:null },
             edge_only : { type: "f", value : 0 },
             //map : { type : "t", value : null },
-            specular_ : {value : [0.6,0.6,0.6]},
+            // Was [0.6,0.6,0.6], which only ever worked because the fragment
+            // shader immediately overwrote specular with face.rgb.  Once the
+            // neutral value actually reaches the light it blows out.
+            // MultiTexturedIsosurface -- the version that renders correctly --
+            // uses 0.02 with shininess 40, i.e. essentially matte.
+            specular_ : {value : [0.02,0.02,0.02]},
             emissive : {value: new THREE.Color(0,0,0 )},
             diffuse : {value: new THREE.Color(0x909090 )},
-            shininess : {value: 15},
+            shininess : {value: 40},   // 15 gave a broad soft highlight; 40 matches MultiTextured
             ambientLightColor : {value:new THREE.Color(0x404040)},
+            // Where the sampled texture colour is allowed to go.  This shader
+            // used to hard-wire albedo into specular ONLY, with diffuse forced
+            // to zero -- which is why the texture was visible just in highlights
+            // and everything else read as dark.  MultiTexturedIsosurface solves
+            // it with a bare `diffuseColor = face;`.  These make it adjustable:
+            //   albedoDiffuse  - lit by lights + ambientLightColor (what you
+            //                    normally want; 1.0 == the MultiTextured look)
+            //   albedoSpecular - the old behaviour, texture in highlights only
+            //   albedoEmissive - self-lit, ignores all lighting, looks flat.
+            //                    Use sparingly; raise ambientLightColor first.
+            albedoDiffuse  : {value: 1.0},
+            albedoSpecular : {value: 0.0},
+            albedoEmissive : {value: 0.0},
 	    cursorIconTex      : { type:"t", value:null },
 	    cursorRayNormal    : { value : new THREE.Vector3( 0, 0, 0 ) },
             cursorRayOrigin    : { value : new THREE.Vector3( 0, 0, 0 ) },
@@ -162,6 +180,9 @@ fragmentShader:`
     uniform vec3 specular_;
     uniform float shininess;
     uniform float opacity;
+    uniform float albedoDiffuse;
+    uniform float albedoSpecular;
+    uniform float albedoEmissive;
     vec3 specular;
     varying vec3 zzNormal;
     varying vec3 zzPos;
@@ -477,10 +498,16 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
                     white = vec4( vec3(1.0,1.0,1.0) * max(edge.r,max(edge.g,edge.b)), 1.0 );
 
 
-	specular = face.rgb;
-	diffuseColor = vec4(vec3(0.0),face.a);
-	//diffuseColor = face;
-	//gl_FragColor = face;
+	// Route the sampled albedo.  Previously this was specular-only with
+	// diffuse pinned to zero, so unlit areas showed no texture at all.
+	//
+	// Blend rather than overwrite: at albedoSpecular 0 the neutral specular_
+	// uniform survives, which is what MultiTexturedIsosurface does (it never
+	// assigns specular at all).  Zeroing it instead removes the white highlight
+	// that desaturates the surface, and everything reads over-saturated --
+	// a sandy albedo goes bright red.
+	specular     = mix( specular_, face.rgb, albedoSpecular );
+	diffuseColor = vec4( face.rgb * albedoDiffuse, face.a );
 
     	#include <logdepthbuf_fragment>
     	#include <map_fragment>
@@ -493,7 +520,7 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
         #include <emissivemap_fragment>
 
       	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
-        vec3 totalEmissiveRadiance = emissive;
+        vec3 totalEmissiveRadiance = emissive + face.rgb * albedoEmissive;
 
   	
         // accumulation
