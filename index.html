@@ -24,6 +24,7 @@
 	<script src="./src/marchingtetrahedra3.js"></script>
 	<script src="./src/marchingtetrahedra4.js"></script>
 	<script src="./src/dual-marching-tetrahedra-3D.js"></script>
+	<script src="./src/dual-marching-tetrahedra-3D3.js"></script>
 	<script src="./src/dual-marching-tetrahedra-brute.js"></script>
 	<script src="./src/surfacenets.js"></script>
 
@@ -79,6 +80,7 @@
 		var geometry, geometryNormals, surfacemesh, wiremesh, lineSegments
 		var meshers = {
 		    'Dual Marching Tetrahedra (DCL-volume)' : DualMarchingTetrahedra3
+		  , 'Dual Marching Tetrahedra 3D3 (edge follow)' : DualMarchingTetrahedra3a
 		  , 'DMT Brute Force (reference)' : DualMarchingTetrahedraBrute
 		  , 'Marching Tetraheda 4 (DCL-volume)' : MarchingTetrahedra4
 		  , 'Marching Tetraheda 3 (DCL-plane)' : MarchingTetrahedra3

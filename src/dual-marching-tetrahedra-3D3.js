@@ -90,7 +90,8 @@ this is the vertex references on the right, and which 'vert N' applies.
 
 // lnQuat (2-norm, lnQuatSq) comes from dual-quat.js
 lnQuat.setVectorType( THREE.Vector3 )
-var DualMarchingTetrahedra3 = window.DualMarchingTetrahedra3a = (function() {
+// a separate name, so -3D.js (DualMarchingTetrahedra3) can be loaded beside it.
+var DualMarchingTetrahedra3a = (function() {
 const debug_ = false;
 const drawCubes = false;
 const drawCubesIntersects = false;
@@ -1198,9 +1199,9 @@ function meshCloud(data) {
 function computeEdges( x, y, z ) {
 	//		if( x < 10 || x > 20 ) continue;
 	let odd = (( x + y + z ) &1);
-	cellOrigin[0] = x-dim0/2;
-	cellOrigin[1] = y-dim1/2;
-	cellOrigin[2] = z-dim2/2;
+	cellOrigin[0] = x-0.5;  // grid space (like -3D.js / MT4); the grid shader looks elements up by position
+	cellOrigin[1] = y-0.5;
+	cellOrigin[2] = z-0.5;
 
 	const baseHere = (x+0 + y*dim0 + z*(dim0*dim1))*6;
 	const baseOffset = x+0 + y*dim0 + z * dim0*dim1;
@@ -1331,7 +1332,8 @@ function computeAllEdges( x, y, z ) {
 		if( !n ){
 			if( smoothShade ) {
 				if( opts.geometryHelper ){
-					n = [ai_.n,ci_.n,bi_.n];
+					// .n is the log-quat (x,0,z) of the normal; .normal is the vector.
+					n = [ai_.normal,ci_.normal,bi_.normal];
 				} else {
 					n = [faceNormals[ai],faceNormals[ci],faceNormals[bi]];// these are three.vectors isntead...
 				}
@@ -1367,6 +1369,16 @@ function computeAllEdges( x, y, z ) {
 		}
 
 		if( opts.geometryHelper )	{
+			if( opts.geometryHelper.types1 ) {
+				// GridGeometryBuffer (the MT3/MT4 path): materials are per corner,
+				// interleaved A1,A2, B1,B2, C1,C2 with one blend each; its addFace
+				// takes a single normal, so smooth shading leaves the addPoint normal.
+				faceTypes[0] = ai_.type1; faceTypes[1] = ai_.type2;
+				faceTypes[2] = ci_.type1; faceTypes[3] = ci_.type2;
+				faceTypes[4] = bi_.type1; faceTypes[5] = bi_.type2;
+				faceDeltas[0] = ai_.typeDelta; faceDeltas[1] = ci_.typeDelta; faceDeltas[2] = bi_.typeDelta;
+				return opts.geometryHelper.addFace( ai, ci, bi, smoothShade?null:n, false, faceTypes, faceDeltas );
+			}
 			return opts.geometryHelper.addFace( ai, ci, bi, n, false	);
 		}
 		let f;
@@ -1374,22 +1386,40 @@ function computeAllEdges( x, y, z ) {
 
 	}
 	var outX, outY, outZ;
+	const faceTypes = [0,0,0,0,0,0];
+	const faceDeltas = [0,0,0];
+	// A tet's dual point gets the material pair (and blend) of its crossing
+	// nearest to it; it is the same for every polygon that shares the point.
+	function pointMaterial( p ) {
+		if( p.type1 !== undefined || !p.sources ) return;
+		let best = null, bestD = Infinity;
+		for( let src of p.sources ) {
+			if( !src ) continue;
+			const v = src.vertBuffer;
+			const d = (v[0]-p.p[0])*(v[0]-p.p[0]) + (v[1]-p.p[1])*(v[1]-p.p[1]) + (v[2]-p.p[2])*(v[2]-p.p[2]);
+			if( d < bestD ) { bestD = d; best = src; }
+		}
+		p.type1 = best.type1; p.type2 = best.type2; p.typeDelta = best.typeDelta;
+	}
 	function addPoint( p, n ) {
 		if( opts.geometryHelper ) {
+			pointMaterial( p );
+			lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
+			const an = lnQA.up();
+			p.normal = [an.x, an.y, an.z];
+			outX = p.p[0]; outY = p.p[1]; outZ = p.p[2];
 			let normal = opts.geometryHelper.addPoint( p.p
 					, null, null // texture, and uv[1,0] 
 					, [0xA0,0x00,0xA0,255] // edge color
 					, [0x11, 0x11, 0x11, 255] // face color
-					, [0,0,0] // normal *needs to be updated*;
+					, p.normal
 					, 100 // pow
 					, false // use texture
 					, false // flat
 					, false // decal texture?
 					, [outX,outY,outZ]  // unit modulous of this point.
-					, false
+					, p.type1, p.type2, p.typeDelta
 			);
-			lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
-			const an = lnQA.up();
 			faceNormals.push( an );
 			p.id = normal.id+1;
 			return p;
@@ -1544,7 +1574,7 @@ function computeAllEdges( x, y, z ) {
 		pt[1] = (pt[1] * 3 + psh.vertBuffer[1])/4;
 		pt[2] = (pt[2] * 3 + psh.vertBuffer[2])/4;
 		const up = lnQA.set( 0, n[0],n[1],n[2]).update().up();
-		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0} );
+		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0, type1:psh.type1, type2:psh.type2, typeDelta:psh.typeDelta} );
 
 		const vp0 = addPoint( p[0] );
 		const vp1 = addPoint( p[1] );
@@ -1688,7 +1718,7 @@ function computeAllEdges( x, y, z ) {
 		pt[1] = (pt[1] * 2 + psh.vertBuffer[1])/3;
 		pt[2] = (pt[2] * 2 + psh.vertBuffer[2])/3;
 	
-		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0} );
+		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0, type1:psh.type1, type2:psh.type2, typeDelta:psh.typeDelta} );
 		const vp0 = addPoint( p[0] );
 		const vp1 = addPoint( p[1] );
 		const vp2 = addPoint( p[2] );
@@ -2589,6 +2619,6 @@ function computeAllEdges( x, y, z ) {
 })()
 
 if("undefined" != typeof exports) {
-	exports.mesher = MarchingTetrahedra4;
+	exports.mesher = DualMarchingTetrahedra3a;
 }
 
