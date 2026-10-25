@@ -388,7 +388,7 @@ void IntersectLineWithPlane( vec3 Slope, vec3 Origin,  // line m, b
 			if( v_types1.z > 0.0 ) {
 				index = v_types1.z/NUMBER_OF_TEXTURE_TYPES + _3D_TEXTURE_LAYER_CONVERSION;
 			} else 
-				index = v_types2.z/NUMBER_OF_TEXTURE_TYPES + _3D_TEXTURE_LAYER_CONVERSION;
+				index = v_types2.x/NUMBER_OF_TEXTURE_TYPES + _3D_TEXTURE_LAYER_CONVERSION; // corner B is types1.z/types2.x (was types2.z, corner C)
 
 			cxy1 = texture( textureMap3, vec3(modulo.xy * TEXTURE_SCALAR,index) );
 			cyz1 = texture( textureMap3, vec3(modulo.yz * TEXTURE_SCALAR,index) );
