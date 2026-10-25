@@ -1406,7 +1406,9 @@ function computeAllEdges( x, y, z ) {
 			pointMaterial( p );
 			lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
 			const an = lnQA.up();
-			p.normal = [an.x, an.y, an.z];
+			// the grid buffers/materials (and MT3/MT4) want the normal pointing down
+			// the gradient, opposite this mesh's winding; up() points with it.
+			p.normal = [-an.x, -an.y, -an.z];
 			outX = p.p[0]; outY = p.p[1]; outZ = p.p[2];
 			let normal = opts.geometryHelper.addPoint( p.p
 					, null, null // texture, and uv[1,0] 
