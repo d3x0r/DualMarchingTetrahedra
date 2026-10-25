@@ -1350,7 +1350,9 @@ function computeAllEdges( x, y, z ) {
 					const tmp1 = [bi_.p[0]-ai_.p[0], bi_.p[1]-ai_.p[1], bi_.p[2]-ai_.p[2]];
 					const tmp2 = [ci_.p[0]-ai_.p[0], ci_.p[1]-ai_.p[1], ci_.p[2]-ai_.p[2]];
 					n = cross( [0,0,0], tmp1, tmp2);
-					const s = -1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+					// (ai,bi,ci) is wound opposite the emitted (ai,ci,bi), so this already
+					// points down the gradient like the smooth p.normal (MT3/MT4 convention).
+					const s = 1/Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
 					n[0] *= s;
 					n[1] *= s;
 					n[2] *= s;
