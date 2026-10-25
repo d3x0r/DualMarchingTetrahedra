@@ -882,7 +882,7 @@ for( let o of tetNearMap )
 	class TetVertBase{ 
 		constructor( p, n, invert, p1, p2, p3, offset, face, tet, odd ) {
 			this.invert = invert;
-			this.p = p;
+			this.p = [0,0,0]; // set by recenter() from the crossings below
 			this.n = n;
 			this.nError = false;
 			this.face = face;
@@ -894,16 +894,28 @@ for( let o of tetNearMap )
 			this. eleDels=[ p1.typeDelta, p2.typeDelta,p3.typeDelta,0 ] ;
 			this.odd = odd;
 			this.nv = [0,0,0]; // summed area-weighted normal (see processCube)
+			this.recenter();
 			p1.normalSources.push( this );
 			p2.normalSources.push( this );
 			p3.normalSources.push( this );
 		}
 	
 	
+		// the dual point: plain average of this tet's distinct crossings (3 or 4).
+		// It used to keep the caller's pCenter array, which the second triangle
+		// of a quad then overwrote, so a quad's point was its 2nd triangle's
+		// centroid instead of the quad's middle.
+		recenter() {
+			let n = 0; const p = this.p; p[0] = p[1] = p[2] = 0;
+			for( let src of this.sources ) {
+				if( !src ) continue;
+				p[0] += src.vertBuffer[0]; p[1] += src.vertBuffer[1]; p[2] += src.vertBuffer[2];
+				n++;
+			}
+			p[0] /= n; p[1] /= n; p[2] /= n;
+		}
+
 		update( pCenter, fnorm, p1, p2, p3 ) {
-			this.p[0] = (this.p[0] + pCenter[0])/2;
-			this.p[1] = (this.p[1] + pCenter[1])/2;
-			this.p[2] = (this.p[2] + pCenter[2])/2;
 			//console.log( "fnorm was:", this.n, fnorm);
 			moveNear( this.n, fnorm );		
 			//console.log( "fnorm became:", fnorm);
@@ -933,6 +945,7 @@ for( let o of tetNearMap )
 				this.eleDels[3] = p3.typeDelta;
 				p3.normalSources.push( this );
 			}
+			this.recenter();
 		}
 	}
 	
@@ -950,6 +963,11 @@ for( let o of tetNearMap )
 	, faceNormals  = []
 	const smoothShade = opts.smoothShade || false;
 	const showGrid = opts.showGrid;
+	// how far each polygon's centre is pulled from its ring's average toward its
+	// edge's crossing (see emitHex/emitSquare).
+	const centerPull = ( "number" === typeof opts.centerPull ) ? opts.centerPull : 1;
+	// smooth tet-point normals over the tets sharing their crossings (pointNormal)
+	const normalSmooth = ( "number" === typeof opts.normalSmooth ) ? opts.normalSmooth : 1;
 
 	const dim0 = dims[0];
 	const dim1 = dims[1];
@@ -1421,7 +1439,10 @@ function computeAllEdges( x, y, z ) {
 	// a polygon center's normal: the sum of the tets around its edge.
 	function ringNormal( ring ) {
 		const v = [0,0,0];
-		for( let r of ring ) { v[0] += r.nv[0]; v[1] += r.nv[1]; v[2] += r.nv[2]; }
+		for( let r of ring ) {
+			const n = normalSmooth ? smoothedNormal( r ) : r.nv;
+			v[0] += n[0]; v[1] += n[1]; v[2] += n[2];
+		}
 		return v;
 	}
 	// field gradient at a mesh point (trilinear over central differences);
@@ -1442,8 +1463,26 @@ function computeAllEdges( x, y, z ) {
 		// the face normals above point along +grad(data) (inside < 0 -> outside)
 		return g;
 	}
+	// A tet point's own crossing triangles are skinny and irregularly tilted, so
+	// on its own its normal is noisy next to the polygon centres (which sum the
+	// 4-6 tets around their edge) -- the shading quilts.  Paint it smooth: sum
+	// the normals of every tet that shares one of its crossings.
+	function smoothedNormal( p ) {
+		if( p.nvs ) return p.nvs;
+		const v = [0,0,0];
+		const seen = new Set();
+		for( let src of p.sources ) {
+			if( !src ) continue;
+			for( let t of src.normalSources ) {
+				if( seen.has( t ) || !t.nv ) continue;
+				seen.add( t );
+				v[0] += t.nv[0]; v[1] += t.nv[1]; v[2] += t.nv[2];
+			}
+		}
+		return ( p.nvs = v );
+	}
 	function pointNormal( p ) {
-		let v = p.nv;
+		let v = ( normalSmooth && p.sources ) ? smoothedNormal( p ) : p.nv;
 		let l = v ? Math.sqrt( v[0]*v[0]+v[1]*v[1]+v[2]*v[2] ) : 0;
 		if( !(l > 1e-12) ) {
 			v = fieldGradient( p.p[0], p.p[1], p.p[2] );
@@ -1612,9 +1651,13 @@ function computeAllEdges( x, y, z ) {
 			normalColors.push( new THREE.Color( 0.8,0.8, 0.8,1.0 ))
 		}
 */
-		pt[0] = (pt[0] * 3 + psh.vertBuffer[0])/4;
-		pt[1] = (pt[1] * 3 + psh.vertBuffer[1])/4;
-		pt[2] = (pt[2] * 3 + psh.vertBuffer[2])/4;
+		// pull the ring's average toward this edge's own crossing (on the surface).
+		// centerPull 1 == the original 1/4 for hexes; 0 == plain ring average
+		// (the brute force mesher).
+		const kh = centerPull/4;
+		pt[0] += ( psh.vertBuffer[0] - pt[0] )*kh;
+		pt[1] += ( psh.vertBuffer[1] - pt[1] )*kh;
+		pt[2] += ( psh.vertBuffer[2] - pt[2] )*kh;
 		const up = lnQA.set( 0, n[0],n[1],n[2]).update().up();
 		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0, type1:psh.type1, type2:psh.type2, typeDelta:psh.typeDelta, nv:ringNormal(p)} );
 
@@ -1756,9 +1799,11 @@ function computeAllEdges( x, y, z ) {
 			normalColors.push( new THREE.Color( 1.0,0.0, 0,1.0 ))
 		}
 */
-		pt[0] = (pt[0] * 2 + psh.vertBuffer[0])/3;
-		pt[1] = (pt[1] * 2 + psh.vertBuffer[1])/3;
-		pt[2] = (pt[2] * 2 + psh.vertBuffer[2])/3;
+		// as emitHex; centerPull 1 == the original 1/3 for squares.
+		const ks = centerPull/3;
+		pt[0] += ( psh.vertBuffer[0] - pt[0] )*ks;
+		pt[1] += ( psh.vertBuffer[1] - pt[1] )*ks;
+		pt[2] += ( psh.vertBuffer[2] - pt[2] )*ks;
 	
 		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0, type1:psh.type1, type2:psh.type2, typeDelta:psh.typeDelta, nv:ringNormal(p)} );
 		const vp0 = addPoint( p[0] );
