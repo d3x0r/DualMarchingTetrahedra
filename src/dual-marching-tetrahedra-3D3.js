@@ -968,6 +968,9 @@ for( let o of tetNearMap )
 	const centerPull = ( "number" === typeof opts.centerPull ) ? opts.centerPull : 1;
 	// smooth tet-point normals over the tets sharing their crossings (pointNormal)
 	const normalSmooth = ( "number" === typeof opts.normalSmooth ) ? opts.normalSmooth : 1;
+	// neighbours more than this far from a point's own normal aren't blended in
+	// (0 = only those facing away; higher keeps sharp edges sharper)
+	const NORMAL_SMOOTH_COS = ( "number" === typeof opts.normalSmoothCos ) ? opts.normalSmoothCos : 0;
 
 	const dim0 = dims[0];
 	const dim1 = dims[1];
@@ -1471,12 +1474,21 @@ function computeAllEdges( x, y, z ) {
 		if( p.nvs ) return p.nvs;
 		const v = [0,0,0];
 		const seen = new Set();
+		// only paint with neighbours facing roughly the same way: on a tiny closed
+		// blob (a single solid sample, 'dots') the neighbourhood wraps around to
+		// the far side and would dent the normal; it also keeps sharp edges.
+		const own = p.nv, ol = Math.sqrt( own[0]*own[0]+own[1]*own[1]+own[2]*own[2] );
 		for( let src of p.sources ) {
 			if( !src ) continue;
 			for( let t of src.normalSources ) {
 				if( seen.has( t ) || !t.nv ) continue;
 				seen.add( t );
-				v[0] += t.nv[0]; v[1] += t.nv[1]; v[2] += t.nv[2];
+				const n = t.nv;
+				if( ol > 0 && t !== p ) {
+					const nl = Math.sqrt( n[0]*n[0]+n[1]*n[1]+n[2]*n[2] );
+					if( !(nl > 0) || ( n[0]*own[0]+n[1]*own[1]+n[2]*own[2] ) < NORMAL_SMOOTH_COS*nl*ol ) continue;
+				}
+				v[0] += n[0]; v[1] += n[1]; v[2] += n[2];
 			}
 		}
 		return ( p.nvs = v );
