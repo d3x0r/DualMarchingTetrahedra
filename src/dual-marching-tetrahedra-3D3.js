@@ -1167,12 +1167,18 @@ function meshCloud(data) {
 
 	if( dim0*dim1*dim2*6 > sizes ) {
 		sizes = dim0 * dim1 * dim2 * 12;
-		bits = new Uint16Array(dim0*dim1*dim2);
-		visited = new Uint8Array(dim0*dim1*dim2);
-		edge_visited = new Uint8Array(dim0*dim1*dim2);
+		// per-cell arrays get the same 2x headroom as the per-edge ones (sizes/6
+		// cells); they were exactly this size, so a later, larger volume that
+		// still passed the check above read past their end (e.g. Sine Waves
+		// then Terrain: edge_visited read undefined and the edge queue never
+		// drained -- the tab ran out of memory).
+		const cells = sizes / 6;
+		bits = new Uint16Array(cells);
+		visited = new Uint8Array(cells);
+		edge_visited = new Uint8Array(cells);
 		pointHolder[0] = new Int32Array(sizes);
 		crossHolder[0] = new Uint8Array(sizes);
-		contentHolder[0] = new Uint8Array(dim0*dim1*dim2*5);  // 1 bit for each tet in each cell. (5)
+		contentHolder[0] = new Uint8Array(cells*5);  // 1 bit for each tet in each cell. (5)
 		for( let zz = normalHolder[0].length; zz < sizes; zz++ ) {
 			normalHolder[0].push( null );
 		}
