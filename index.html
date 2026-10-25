@@ -227,7 +227,10 @@
 									 // then lets every duplicated corner inherit THIS
 									 // value -- which is how MarchingTetrahedra4 gets
 									 // smooth normals through the grid shader.
-									 , (result.normals && result.normals[i]) || [0,0,0]
+									 // The grid material is lit for normals pointing DOWN
+									 // the gradient (what MT3/MT4 hand it); meshers that
+									 // return a result wind (and point their normals) up it.
+									 , (result.normals && result.normals[i] && [-result.normals[i][0],-result.normals[i][1],-result.normals[i][2]]) || [0,0,0]
 									 , 100 // pow
 									 , false // use texture
 									 , false // flat
@@ -265,7 +268,8 @@
 					norm[2]=a      *tmp[1] - b*tmp[0];
 					ds=norm[0]*norm[0]+norm[1]*norm[1]+norm[2]*norm[2];
 				}
-				norm[0] *= 1/Math.sqrt(ds);norm[1] *= 1/Math.sqrt(ds);norm[2] *= 1/Math.sqrt(ds);
+				// negative: down the gradient, for the grid material (see addPoint above)
+				norm[0] *= -1/Math.sqrt(ds);norm[1] *= -1/Math.sqrt(ds);norm[2] *= -1/Math.sqrt(ds);
 
 				// GridGeometryBuffer.addFace is (a,b,c, n, i, types, deltaTypes)
 				// and copyPoint() dereferences types/deltaTypes the first time
