@@ -971,6 +971,8 @@ for( let o of tetNearMap )
 	// neighbours more than this far from a point's own normal aren't blended in
 	// (0 = only those facing away; higher keeps sharp edges sharper)
 	const NORMAL_SMOOTH_COS = ( "number" === typeof opts.normalSmoothCos ) ? opts.normalSmoothCos : 0;
+	// a smoothed normal further than this from the unsmoothed one is dropped for it
+	const NORMAL_SMOOTH_KEEP = ( "number" === typeof opts.normalSmoothKeep ) ? opts.normalSmoothKeep : 0.5;
 
 	const dim0 = dims[0];
 	const dim1 = dims[1];
@@ -1441,11 +1443,13 @@ function computeAllEdges( x, y, z ) {
 	}
 	// a polygon center's normal: the sum of the tets around its edge.
 	function ringNormal( ring ) {
-		const v = [0,0,0];
+		const v = [0,0,0], raw = [0,0,0];
 		for( let r of ring ) {
 			const n = normalSmooth ? smoothedNormal( r ) : r.nv;
 			v[0] += n[0]; v[1] += n[1]; v[2] += n[2];
+			raw[0] += r.nv[0]; raw[1] += r.nv[1]; raw[2] += r.nv[2];
 		}
+		v.raw = raw; // unsmoothed, for pointNormal's check
 		return v;
 	}
 	// field gradient at a mesh point (trilinear over central differences);
@@ -1496,6 +1500,14 @@ function computeAllEdges( x, y, z ) {
 	function pointNormal( p ) {
 		let v = ( normalSmooth && p.sources ) ? smoothedNormal( p ) : p.nv;
 		let l = v ? Math.sqrt( v[0]*v[0]+v[1]*v[1]+v[2]*v[2] ) : 0;
+		if( normalSmooth && l > 1e-12 ) {
+			// smoothing must not carry a normal far from the point's own faces: on
+			// a small, sharp blob (a lone sample in 'dots') neighbours that each
+			// pass smoothedNormal's test can still add up past the surface.
+			const r = p.sources ? p.nv : ( p.nv && p.nv.raw );
+			const rl = r ? Math.sqrt( r[0]*r[0]+r[1]*r[1]+r[2]*r[2] ) : 0;
+			if( rl > 1e-12 && ( v[0]*r[0]+v[1]*r[1]+v[2]*r[2] ) < NORMAL_SMOOTH_KEEP*l*rl ) { v = r; l = rl; }
+		}
 		if( !(l > 1e-12) ) {
 			v = fieldGradient( p.p[0], p.p[1], p.p[2] );
 			l = Math.sqrt( v[0]*v[0]+v[1]*v[1]+v[2]*v[2] );
