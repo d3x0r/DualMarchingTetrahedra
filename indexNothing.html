@@ -491,7 +491,9 @@
 			scene.add( light );
 			var light	= new THREE.PointLight( 0.8 * 0xffffff );
 			//light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
-			light.position.set( Math.random(), Math.random(), Math.random() ).normalize();
+			// fixed seed, so the light (and every screenshot) is the same each run
+			const lightRandom = window.SFC32( "lights" );
+			light.position.set( lightRandom(), lightRandom(), lightRandom() ).normalize();
 			light.position.multiplyScalar(20);
 			scene.add( light );
 

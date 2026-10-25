@@ -1,4 +1,8 @@
 import "./three.js/three.min.js";
+import {SFC32} from "./seededRandom.js"
+
+// reseeded for every volume, so the material layout is the same every run.
+let random = SFC32( "testelement" );
 
 function createTestElementData() {
 	var result = {};
@@ -15,6 +19,7 @@ function createTestElementData() {
 	
 	function makeVolume(dims, f) {
 		return memoize( function(field, fill) {
+			random = SFC32( "testelement" );
 			var res = field.dims;// = new Array(3);
 			//for(var i=0; i<3; ++i) {
 			//	res[i] = 2 + Math.ceil((dims[i][1] - dims[i][0]) / dims[i][2]);
@@ -33,7 +38,7 @@ function createTestElementData() {
 						if( fill < 0 )
 							volume[n] = 0; 
 						else
-							volume[n] = 1 + ( (7 * Math.random())|0 );
+							volume[n] = 1 + ( (7 * random())|0 );
 						continue;
 					}
 				} 
@@ -51,7 +56,7 @@ function createTestElementData() {
 					if( field.data[n] >= 0 )
 						volume[n] = 0;
 					else
-						volume[n] = 1 + (7 * Math.random())|0;
+						volume[n] = 1 + (7 * random())|0;
 			}
 
 			return {texture:makeElementImage( volume, res ), data: volume, dims:res};
@@ -117,9 +122,9 @@ function createTestElementData() {
 			if( ( Math.abs(x) % 2 == 1 )
 			&& ( (z < 0 ) ? ( Math.abs(y) % 2 == 1 ) : ( Math.abs(y) % 2 == 0 ) )
 			&& ( ( Math.abs(x) % 2 == 0 ) ? ( Math.abs(z) % 2 == 1 ) : ( Math.abs(z) % 2 == 1 ) ))
-				return -2.3 * Math.random();
+				return -2.3 * random();
 			else
-				return 2.3 * Math.random();
+				return 2.3 * random();
 		}
 	);
 

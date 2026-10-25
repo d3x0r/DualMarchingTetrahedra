@@ -1,10 +1,14 @@
 
 import {noise} from "./perlin-min.mjs"
+import {SFC32} from "./seededRandom.js"
+
+// reseeded for every volume, so each data set is the same every time it is built.
+let random = SFC32( "testdata" );
 
 var noiseOpts;
 var noiseMap = noise(noiseOpts ={
 	patchSize : 256,
-	seed_noise : '' + Date.now(),
+	seed_noise : 'testdata', // was '' + Date.now(); fixed so runs compare
 	repeat_modulo : 256,
 	//base : 0,
 } );
@@ -24,6 +28,7 @@ function createTestData() {
 	
 	function makeVolume(dims, f) {
 		return memoize( function(fill) {
+			random = SFC32( "testdata" );
 			var res = new Array(3);
 			for(var i=0; i<3; ++i) {
 				if( fill )
@@ -40,9 +45,9 @@ function createTestData() {
 			for(var j=0, y=dims[1][0]-dims[1][2]; j<res[1]; ++j, y+=dims[1][2])
 			for(var i=0, x=dims[0][0]-dims[0][2]; i<res[0]; ++i, x+=dims[0][2], ++n) {
 				if( fill < 0 )
-					volume[n] = 2.3 * Math.random();
+					volume[n] = 2.3 * random();
 				if( fill > 0 )
-					volume[n] = -2.3 * Math.random();
+					volume[n] = -2.3 * random();
 			}
 			var z;
 			for( k=k, z=dims[2][0]-dims[2][2]; k<(res[2]-(fill?1:0)); ++k, z+=dims[2][2])
@@ -51,9 +56,9 @@ function createTestData() {
 			
 				if( fill && (j == 0 || i == 0 || j == (res[1]-1) || i == (res[0]-1))){
 					if( fill < 0 )
-						volume[n] = 2.3 * Math.random();
+						volume[n] = 2.3 * random();
 					else if( fill > 0 )
-						volume[n] = -2.3 * Math.random();
+						volume[n] = -2.3 * random();
 					else n--;
 				}else
 					volume[n] = f(x,y,z);
@@ -63,9 +68,9 @@ function createTestData() {
 			for(var j=0, y=dims[1][0]-dims[1][2]; j<res[1]; ++j, y+=dims[1][2])
 			for(var i=0, x=dims[0][0]-dims[0][2]; i<res[0]; ++i, x+=dims[0][2], ++n) {
 				if( fill < 0 )
-					volume[n] = 2.3 * Math.random();
+					volume[n] = 2.3 * random();
 				if( fill > 0 )
-					volume[n] = -2.3 * Math.random();
+					volume[n] = -2.3 * random();
 			}
 			res[0] = res[0];
 			res[1] = res[1];
@@ -122,9 +127,9 @@ function createTestData() {
 			if( ( Math.abs(x) % 2 == 1 )
 			&& ( (z < 0 ) ? ( Math.abs(y) % 2 == 1 ) : ( Math.abs(y) % 2 == 0 ) )
 			&& ( ( Math.abs(x) % 2 == 0 ) ? ( Math.abs(z) % 2 == 1 ) : ( Math.abs(z) % 2 == 1 ) ))
-				return -2.3 * Math.random();
+				return -2.3 * random();
 			else
-				return 2.3 * Math.random();
+				return 2.3 * random();
 		}
 	);
 	

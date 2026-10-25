@@ -38,11 +38,13 @@ TextureDone( ()=>{
 	window.doInit();
 })
 
+import {SFC32} from "./seededRandom.js"
 import {createTestData} from "./testdata.js"
 import {createTestElementData} from "./testelement.js"
 
 window.createTestElementData = createTestElementData;
 window.createTestData = createTestData;
+window.SFC32 = SFC32; // seeded random for the pages (lights)
 
 export {TextureStack,common }
 //THREE.GridGeometryBuffer 
