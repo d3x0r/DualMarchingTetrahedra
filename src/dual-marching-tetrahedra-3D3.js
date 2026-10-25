@@ -1203,6 +1203,11 @@ function meshCloud(data) {
 
 
 // for a single block x/y/z, get the 6 unique edges...
+// keep a crossing off the very ends of its edge (scale independent).
+const EDGE_T_MIN = 0.01;
+function edgeT( t ) {
+	return t < EDGE_T_MIN ? EDGE_T_MIN : t > 1-EDGE_T_MIN ? 1-EDGE_T_MIN : t;
+}
 function computeEdges( x, y, z ) {
 	//		if( x < 10 || x > 20 ) continue;
 	let odd = (( x + y + z ) &1);
@@ -1254,8 +1259,12 @@ function computeEdges( x, y, z ) {
 			
 			//console.log( "x, y is a cross:", x+y*dim0,(x+y*dim0)*6, crosses.length, baseOffset+l, x, y, p0, p1, data0, data1, `d:${d} e:${e}` );
 			if( e <= 0 ) {
-				if( e >-0.999 ) (t = -(e-0.01)/(d-(e-0.01))) 
-				else (t = -e/(d-e));
+				// linear interpolation, like MT3/MT4, kept a little off the ends so a
+				// sample exactly at 0 doesn't collapse every crossing around it onto
+				// one point.  This used to nudge the inside VALUE by 0.01 instead,
+				// which moved every crossing on fields with small values (Heart:
+				// ~0.001 near the surface), sinking it and fighting the inflation.
+				t = edgeT( -e/(d-e) );
 // --V-V-V-V-V-V-V-V-- CREATE OUTPUT POINT(VERTEX) HERE --V-V-V-V-V-V-V-V--
 				pointOutputHolder[0] = cellOrigin[0] + geom[p1][0]+( geom[p0][0]- geom[p1][0])* t;
 				pointOutputHolder[1] = cellOrigin[1] + geom[p1][1]+( geom[p0][1]- geom[p1][1])* t;
@@ -1273,8 +1282,7 @@ function computeEdges( x, y, z ) {
 				points[baseHere+l] = normal.id;
 // --^-^-^-^-^-^-- END OUTPUT POINT(VERTEX) HERE --^-^-^-^-^-^--
 			} else {
-				if( d >-0.999 ) (t = -(d - 0.01)/(e-(d - 0.01)))  ;
-				else (t = -d/(e-d));
+				t = edgeT( -d/(e-d) );
 // --V-V-V-V-V-V-V-V-- OUTPUT POINT 2 HERE --V-V-V-V-V-V-V-V--
 				{
 					pointOutputHolder[0] = cellOrigin[0] + geom[p0][0]+( geom[p1][0]- geom[p0][0])* t;
