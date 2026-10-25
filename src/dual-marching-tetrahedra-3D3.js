@@ -893,6 +893,7 @@ for( let o of tetNearMap )
 			this.elements=[p1.type1,p1.type2,p2.type1,p2.type2,p3.type1,p3.type2,0,0]
 			this. eleDels=[ p1.typeDelta, p2.typeDelta,p3.typeDelta,0 ] ;
 			this.odd = odd;
+			this.nv = [0,0,0]; // summed area-weighted normal (see processCube)
 			p1.normalSources.push( this );
 			p2.normalSources.push( this );
 			p3.normalSources.push( this );
@@ -1407,14 +1408,53 @@ function computeAllEdges( x, y, z ) {
 		}
 		p.type1 = best.type1; p.type2 = best.type2; p.typeDelta = best.typeDelta;
 	}
+	// a polygon center's normal: the sum of the tets around its edge.
+	function ringNormal( ring ) {
+		const v = [0,0,0];
+		for( let r of ring ) { v[0] += r.nv[0]; v[1] += r.nv[1]; v[2] += r.nv[2]; }
+		return v;
+	}
+	// field gradient at a mesh point (trilinear over central differences);
+	// only used when a point's summed face normal is zero.
+	function fieldGradient( px, py, pz ) {
+		const gx = px+0.5, gy = py+0.5, gz = pz+0.5; // undo cellOrigin's -0.5
+		const x0 = Math.max(1,Math.min(dim0-3,Math.floor(gx))), y0 = Math.max(1,Math.min(dim1-3,Math.floor(gy))), z0 = Math.max(1,Math.min(dim2-3,Math.floor(gz)));
+		const fx = Math.max(0,Math.min(1,gx-x0)), fy = Math.max(0,Math.min(1,gy-y0)), fz = Math.max(0,Math.min(1,gz-z0));
+		const D = (x,y,z)=>data[x + y*dim0 + z*dim0*dim1];
+		const g = [0,0,0];
+		for( let c = 0; c < 8; c++ ) {
+			const x = x0+(c&1), y = y0+((c>>1)&1), z = z0+((c>>2)&1);
+			const w = ((c&1)?fx:1-fx) * ((c&2)?fy:1-fy) * ((c&4)?fz:1-fz);
+			g[0] += w*(D(x+1,y,z)-D(x-1,y,z));
+			g[1] += w*(D(x,y+1,z)-D(x,y-1,z));
+			g[2] += w*(D(x,y,z+1)-D(x,y,z-1));
+		}
+		// the face normals above point along +grad(data) (inside < 0 -> outside)
+		return g;
+	}
+	function pointNormal( p ) {
+		let v = p.nv;
+		let l = v ? Math.sqrt( v[0]*v[0]+v[1]*v[1]+v[2]*v[2] ) : 0;
+		if( !(l > 1e-12) ) {
+			v = fieldGradient( p.p[0], p.p[1], p.p[2] );
+			l = Math.sqrt( v[0]*v[0]+v[1]*v[1]+v[2]*v[2] );
+		}
+		if( !(l > 1e-12) ) {
+			lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
+			const an = lnQA.up();
+			return [an.x, an.y, an.z];
+		}
+		return [v[0]/l, v[1]/l, v[2]/l];
+	}
 	function addPoint( p, n ) {
 		if( opts.geometryHelper ) {
 			pointMaterial( p );
 			lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
 			const an = lnQA.up();
+			const pn = pointNormal( p );
 			// the grid buffers/materials (and MT3/MT4) want the normal pointing down
-			// the gradient, opposite this mesh's winding; up() points with it.
-			p.normal = [-an.x, -an.y, -an.z];
+			// the gradient, opposite this mesh's winding; these point with it.
+			p.normal = [-pn[0], -pn[1], -pn[2]];
 			outX = p.p[0]; outY = p.p[1]; outZ = p.p[2];
 			let normal = opts.geometryHelper.addPoint( p.p
 					, null, null // texture, and uv[1,0] 
@@ -1582,7 +1622,7 @@ function computeAllEdges( x, y, z ) {
 		pt[1] = (pt[1] * 3 + psh.vertBuffer[1])/4;
 		pt[2] = (pt[2] * 3 + psh.vertBuffer[2])/4;
 		const up = lnQA.set( 0, n[0],n[1],n[2]).update().up();
-		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0, type1:psh.type1, type2:psh.type2, typeDelta:psh.typeDelta} );
+		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0, type1:psh.type1, type2:psh.type2, typeDelta:psh.typeDelta, nv:ringNormal(p)} );
 
 		const vp0 = addPoint( p[0] );
 		const vp1 = addPoint( p[1] );
@@ -1726,7 +1766,7 @@ function computeAllEdges( x, y, z ) {
 		pt[1] = (pt[1] * 2 + psh.vertBuffer[1])/3;
 		pt[2] = (pt[2] * 2 + psh.vertBuffer[2])/3;
 	
-		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0, type1:psh.type1, type2:psh.type2, typeDelta:psh.typeDelta} );
+		const vpc = addPoint( {p:0?psh.vertBuffer:pt, n:n, id:0, type1:psh.type1, type2:psh.type2, typeDelta:psh.typeDelta, nv:ringNormal(p)} );
 		const vp0 = addPoint( p[0] );
 		const vp1 = addPoint( p[1] );
 		const vp2 = addPoint( p[2] );
@@ -1930,6 +1970,19 @@ function computeAllEdges( x, y, z ) {
 			// still just be the face normal, with a lot less extra steps.
 			if( useFace-- ) {
 				const fpi = facePointIndexes[odd][tet][invert][useFace];
+				// inside (data < 0) corners -> outside (>= 0) corners of this tet;
+				// a crossing triangle's normal must point this way (along +grad).
+				const outDir = [0,0,0];
+				{
+					let nIn = 0, nOut = 0; const cin = [0,0,0], cout = [0,0,0];
+					for( let k = 0; k < 4; k++ ) {
+						const g = geom[vertToDataOrig[odd][tet][k]];
+						const c = ( data[dataOffset+vertToData[odd][tet][k]] >= 0 ) ? cout : cin;
+						c[0] += g[0]; c[1] += g[1]; c[2] += g[2];
+						if( c === cout ) nOut++; else nIn++;
+					}
+					for( let i = 0; i < 3; i++ ) outDir[i] = cout[i]/nOut - cin[i]/nIn;
+				}
 				const pCenter = [0,0,0];
 				let edges = 0;
 				let fixed = false;
@@ -2100,6 +2153,19 @@ function computeAllEdges( x, y, z ) {
 						//console.log( "Adding at ", x, y, z, dataOffset, useFace, tet );
 					} else {
 						tv.update( pCenter, fnorm, pointStateHolder[ai], pointStateHolder[bi], pointStateHolder[ci] )
+					}
+					// The vertex normal, as a plain vector: the crossing triangle's
+					// area-weighted normal (same orientation as the log-quat above).
+					// A zero-area triangle adds nothing instead of a guessed direction.
+					{
+						const ux = vB[0]-vA[0], uy = vB[1]-vA[1], uz = vB[2]-vA[2];
+						const wx = vC[0]-vA[0], wy = vC[1]-vA[1], wz = vC[2]-vA[2];
+						const cx = uy*wz - uz*wy, cy = uz*wx - ux*wz, cz = ux*wy - uy*wx;
+						// don't trust the table's winding; orient by the tet's corners.
+						const sgn = ( cx*outDir[0] + cy*outDir[1] + cz*outDir[2] ) < 0 ? -1 : 1;
+						tv.nv[0] += sgn*cx;
+						tv.nv[1] += sgn*cy;
+						tv.nv[2] += sgn*cz;
 					}
 				}
 				didTet.push( tv );
