@@ -1474,25 +1474,16 @@ function computeAllEdges( x, y, z ) {
 			p.id = normal.id+1;
 			return p;
 		}else {
+			// plain THREE.Geometry: the normal faces the Face3's front, which is
+			// this mesh's emitted winding, so it is pointNormal() as is (the grid
+			// buffers above want the opposite).
 			if( smoothShade ) {
 				if( !p.id ) {
 					p.id = (vertices.push(new THREE.Vector3( p.p[0],  p.p[1], p.p[2] )),vertices.length-1)+1;
-					if( n ) {
-						lnQA.set( 0,n[0],n[1],n[2] ).update();
-						const an = lnQA.up();
-						faceNormals.push( an );
-					} else {
-						if( p.invert ) {
-							lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
-
-						}else
-						lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
-						const an = lnQA.up();
-						faceNormals.push( an );
-					}
+					const pn = pointNormal( p );
+					const an = new THREE.Vector3( pn[0], pn[1], pn[2] );
+					faceNormals.push( an );
 					if(  normalVertices){
-						lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
-						const an = lnQA.up();
 						normalVertices.push( new THREE.Vector3( p.p[0],p.p[1],p.p[2]+0.02 ))
 						normalVertices.push( new THREE.Vector3( p.p[0]+an.x*1.3,p.p[1]+an.y*1.3,p.p[2]+an.z*1.3));
 						normalColors.push( new THREE.Color( 0,0.7, 0.7,1.0 ))
@@ -1502,15 +1493,8 @@ function computeAllEdges( x, y, z ) {
 				return p;//p.id - 1;
 			}else {
 				let newId = (vertices.push(new THREE.Vector3( p.p[0],  p.p[1], p.p[2] )),vertices.length-1)+1;
-				if( n ) {
-					lnQA.set( 0,n[0],n[1],n[2] ).update();
-					const an = lnQA.up();
-					faceNormals.push( an );
-				} else {
-					lnQA.set( 0, p.n[0], p.n[1], p.n[2] ).update();
-					const an = lnQA.up();
-					faceNormals.push( an );
-				}
+				const pn = pointNormal( p );
+				faceNormals.push( new THREE.Vector3( pn[0], pn[1], pn[2] ) );
 				p.id = newId;  // this will get updated dynamically
 				return p;
 			}
